@@ -22,7 +22,7 @@ TOP_TABLE = 50           # movies available per table
 TOP_AGREE = 49           # movies in the agreement gallery
 TOP2 = 50                # extremes per side on the bubble chart
 TOP_GENRE = 1            # extremes per side per genre
-TOP_DECADE = 1           # extremes per side per decade
+TOP_PERIOD = 1           # extremes per side per five-year period
 GENRE_COUNT = 12         # how many genres to show
 POSTER_DIR = Path("posters")
 POSTER_SIZE = (236, 348)  # 2x the largest display size (gallery cards)
@@ -100,19 +100,19 @@ for g in top_genres:
                    "neg": [slim(r) for r in n[:TOP_GENRE]]})
 genres.sort(key=lambda group: abs(group["average"]))
 
-# By decade: most extreme per side, 1980s .. 2020s.
-decades = []
-for d0 in range(1980, 2030, 10):
-    items = [r for r in rows if d0 <= r["y"] < d0 + 10]
+# By period: most extreme per side in five-year slices, 1980 .. 2029.
+periods = []
+for start in range(1980, 2030, 5):
+    items = [r for r in rows if start <= r["y"] < start + 5]
     if not items:
         continue
     p = sorted((r for r in items if r["d"] > 0), key=lambda r: -r["d"])
     n = sorted((r for r in items if r["d"] < 0), key=lambda r: r["d"])
-    decades.append({"g": f"{d0}s",
+    periods.append({"g": f"{start}-{start + 4}",
                     "average": mean(r["d"] for r in items),
                     "count": len(items),
-                    "pos": [slim(r) for r in p[:TOP_DECADE]],
-                    "neg": [slim(r) for r in n[:TOP_DECADE]]})
+                    "pos": [slim(r) for r in p[:TOP_PERIOD]],
+                    "neg": [slim(r) for r in n[:TOP_PERIOD]]})
 
 # Agreement: most popular movies where critics and users match (|diff| <= 1).
 agree = [slim(r, False) for r in by_pop if abs(r["d"]) <= 1][:TOP_AGREE]
@@ -161,7 +161,7 @@ payload = {
                "neg": [m for m in chart2["ext"] if m["d"] < 0],
                "ctx": chart2["ctx"]},
     "genres": category_input(genres, 46),
-    "decades": category_input(decades, 60),
+    "decades": category_input(periods, 60),
     "agree": agree,
 }
 
@@ -223,7 +223,7 @@ with ThreadPoolExecutor(8) as pool:
 payload["movies"] = movies
 
 print(f"{len(ext1)} timeline extremes, {len(ext2)} bubble extremes, "
-      f"{len(genres)} genres, {len(decades)} decades, "
+      f"{len(genres)} genres, {len(periods)} five-year periods, "
       f"{len(agree)} agreement movies")
 
 encoded = json.dumps(payload, separators=(",", ":"))
