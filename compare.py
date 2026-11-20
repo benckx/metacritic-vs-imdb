@@ -20,13 +20,11 @@ def load_imdb_ratings(path: str) -> dict:
     return ratings
 
 
-def load_basics_fallback(path: str, wanted: set) -> tuple:
-    """Return (title+year -> tconst map, tconst -> genres map for all movies).
-
-    Fallback keys matching more than one IMDb movie are dropped as ambiguous.
-    """
+def load_basics_fallback(path: str, wanted: set, explicit: set) -> tuple:
+    """Return fallback matches, genres, and release years for explicit IMDb IDs."""
     index = {}
     genres = {}
+    years = {}
     with open(path, newline="") as f:
         reader = csv.reader(f, delimiter="\t", quoting=csv.QUOTE_NONE)
         next(reader)
@@ -35,10 +33,12 @@ def load_basics_fallback(path: str, wanted: set) -> tuple:
                 continue
             if row[8] != "\\N":
                 genres[row[0]] = row[8]
+            if row[0] in explicit and row[5] != "\\N":
+                years[row[0]] = int(row[5])
             keys = {(t.lower(), row[5]) for t in (row[2], row[3])}
             for key in keys & wanted:
                 index.setdefault(key, set()).add(row[0])
-    return ({k: v.pop() for k, v in index.items() if len(v) == 1}, genres)
+    return index, genres, years
 
 
 def main():
@@ -56,18 +56,43 @@ def main():
 
     ratings = load_imdb_ratings("title.ratings.tsv")
 
-    # Fallback title+year match for rows without an embedded tt id;
-    # same pass collects genres for every IMDb movie.
+    # Match exact years first; only use adjacent years for an unambiguous eligible movie.
     explicit = {m["tconst"] for m in movies if m["tconst"]}
     missing = [m for m in movies if not m["tconst"]]
-    wanted = {(m["title"].rsplit(" (", 1)[0].lower(), str(m["year"]))
-              for m in missing if m["year"]}
-    index, genres = load_basics_fallback("title.basics.tsv", wanted)
+    wanted = {(m["title"].rsplit(" (", 1)[0].lower(), str(int(m["year"]) + offset))
+              for m in missing if m["year"] for offset in (-1, 0, 1)}
+    index, genres, years = load_basics_fallback("title.basics.tsv", wanted, explicit)
+    for m in movies:
+        if m["tconst"] in years:
+            m["year"] = max(int(m["year"] or 0), years[m["tconst"]])
+
+    def eligible(t):
+        return t in ratings and ratings[t][1] >= args.min_votes
+
+    # Do not let an adjacent-year match steal another Metacritic film's exact match.
+    exact_reserved = set().union(*(index.get((m["title"].rsplit(" (", 1)[0].lower(),
+                                             str(m["year"])), set())
+                                   for m in missing if m["year"]))
     for m in missing:
-        t = index.get((m["title"].rsplit(" (", 1)[0].lower(),
-                       str(m["year"])))
-        if t and t not in explicit:
-            m["tconst"] = t
+        if not m["year"]:
+            continue
+        title = m["title"].rsplit(" (", 1)[0].lower()
+        year = int(m["year"])
+        exact = index.get((title, str(year)), set())
+        if len(exact) == 1:
+            t = next(iter(exact))
+            if eligible(t) and t not in explicit:
+                m["tconst"] = t
+                continue
+        if any(eligible(t) for t in exact):
+            continue
+        if m["title"].lower() != title:
+            continue
+        nearby = [(t, other_year) for other_year in (year - 1, year + 1)
+                  for t in index.get((title, str(other_year)), set()) if eligible(t)]
+        if len(nearby) == 1 and nearby[0][0] not in explicit | exact_reserved:
+            m["tconst"] = nearby[0][0]
+            m["year"] = max(year, nearby[0][1])
 
     rows = []
     seen = set()
