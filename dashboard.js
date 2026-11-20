@@ -102,7 +102,7 @@ function buildTable(sel, title, color, items) {
     table.innerHTML =
         `<caption style="color:${color}"></caption>
      <colgroup><col class="rank-column"><col class="poster-column"><col></colgroup>
-     <tbody><tr><th class="num">#</th><th></th><th>Movie · hover for scores</th></tr></tbody>`;
+     <tbody></tbody>`;
     const button = document.createElement("button");
     button.type = "button";
     button.className = "view-more";
