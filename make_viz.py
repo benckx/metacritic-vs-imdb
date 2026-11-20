@@ -13,13 +13,13 @@ CONTEXT1 = 300           # grey dots on the timeline chart
 CONTEXT2 = 1200          # grey bubbles on the Metascore vs IMDb chart
 TOP_TABLE = 20           # rows per table
 TOP2 = 10                # extremes per side on the bubble chart
-TOP_GENRE = 3            # extremes per side per genre
-TOP_DECADE = 5           # extremes per side per decade
+TOP_GENRE = 1            # extremes per side per genre
+TOP_DECADE = 1           # extremes per side per decade
 GENRE_COUNT = 12         # how many genres to show
 
 
 def slim(r):
-    return {"t": r["t"], "y": r["y"], "d": r["d"], "mc": r["mc"],
+    return {"id": r["id"], "t": r["t"], "y": r["y"], "d": r["d"], "mc": r["mc"],
             "im": r["im"], "v": r["v"], "img": r["img"], "g": r["g"]}
 
 
@@ -27,6 +27,7 @@ rows = []
 for path in ("critics_over_users.csv", "users_over_critics.csv"):
     for r in csv.DictReader(open(path)):
         rows.append({
+            "id": r["tconst"],
             "t": r["title"],
             "y": int(r["year"]) if r["year"] else None,
             "d": float(r["diff_pct"]),

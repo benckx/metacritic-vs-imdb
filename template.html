@@ -33,9 +33,21 @@
   th, td { padding: 5px 10px; text-align: left; border-top: 1px solid var(--border); }
   th { color: var(--muted); font-weight: 500; border-top: none; }
   td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
-  td.pct { border-radius: 4px; text-align: right; font-weight: 600; }
   td.poster-cell { padding: 3px 6px; }
-  td img { width: 30px; height: 44px; object-fit: cover; border-radius: 3px; display: block; }
+  td img { width: 60px; height: 88px; object-fit: cover; border-radius: 5px; display: block; }
+  a { color: inherit; text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  .movie-link { display: block; }
+  .apexcharts-marker, .apexcharts-datalabel { cursor: pointer; }
+  .diff-cell { width: 40%; }
+  .diff-track { position: relative; height: 32px; background: #232a36; border-radius: 5px; overflow: hidden; }
+  .diff-fill { position: absolute; inset: 0 auto 0 0; border-radius: 5px; }
+  .diff-value { position: relative; display: block; padding: 7px 10px; text-align: right; font-weight: 600; }
+  .movie-row { position: relative; outline: none; }
+  .movie-row:hover, .movie-row:focus { background: #1d2430; }
+  .row-scores { display: none; position: absolute; z-index: 5; left: 10px; bottom: 100%; padding: 8px 12px;
+    border: 1px solid var(--border); border-radius: 6px; background: #1d2430; color: var(--text); white-space: nowrap; }
+  .movie-row:hover .row-scores, .movie-row:focus .row-scores { display: block; }
   .apex-tip { display: flex; gap: 10px; padding: 10px; max-width: 300px; align-items: flex-start; }
   .apex-tip img { width: 62px; height: 92px; object-fit: cover; border-radius: 4px; }
   .apex-tip .tt { font-weight: 600; margin-bottom: 4px; }
@@ -75,11 +87,11 @@ All scores in percent; diff = Metascore − IMDb. Movies since 1980.</p>
 <div class="card" style="max-width:940px"><div id="chart2"></div></div>
 
 <h2>Most extreme by genre</h2>
-<p class="sub">Top 3 disagreements per side for the most common genres.</p>
+<p class="sub">One most extreme movie per side for each genre.</p>
 <div class="card" style="max-width:900px"><div id="chart-genre"></div></div>
 
 <h2>Most extreme by decade</h2>
-<p class="sub">Top 5 disagreements per side per decade.</p>
+<p class="sub">One most extreme movie per side for each decade.</p>
 <div class="card" style="max-width:900px"><div id="chart-decade"></div></div>
 
 <h2>Where everyone agrees</h2>
@@ -93,6 +105,7 @@ const P = /*PAYLOAD*/;
 const IMG = "https://www.metacritic.com/a/img/catalog";
 const RED = "#e05c55", BLUE = "#4e8de8", GREY = "#555e6e";
 const poster = m => m.img ? IMG + m.img : null;
+const imdb = m => `https://www.imdb.com/title/${m.id}/`;
 const pct = v => Math.round(v) + "%";
 const sdiff = v => (v > 0 ? "+" : "") + Math.round(v) + "%";
 
@@ -113,30 +126,49 @@ const baseChart = {
   toolbar: { show: false },
   zoom: { enabled: false },
   animations: { enabled: true, speed: 500 },
+  events: {
+    dataPointSelection: (_, __, { seriesIndex, dataPointIndex, w }) => {
+      const movie = w.config.series[seriesIndex].data[dataPointIndex].meta;
+      window.open(imdb(movie), "_blank", "noopener,noreferrer");
+    },
+  },
 };
 const darkTheme = { mode: "dark" };
 
 // ---------- tables ----------
-function scoreColor(v) {           // 0 red -> 100 green
-  return `hsla(${v * 1.2}, 55%, 42%, .55)`;
-}
 function diffColor(d) {
   const a = Math.min(Math.abs(d) / 50, 1) * 0.75 + 0.1;
   return d >= 0 ? `rgba(224,92,85,${a})` : `rgba(78,141,232,${a})`;
 }
 function buildTable(sel, title, color, items) {
-  const rows = items.map((m, i) => `<tr>
+  const rows = items.map((m, i) => `<tr class="movie-row" tabindex="0">
     <td class="num" style="color:var(--muted)">${i + 1}</td>
-    <td class="poster-cell">${poster(m) ? `<img src="${poster(m)}" loading="lazy">` : ""}</td>
-    <td>${m.t}</td><td class="num" style="color:var(--muted)">${m.y}</td>
-    <td class="pct" style="background:${scoreColor(m.mc)}">${pct(m.mc)}</td>
-    <td class="pct" style="background:${scoreColor(m.im)}">${pct(m.im)}</td>
-    <td class="pct" style="background:${diffColor(m.d)}">${sdiff(m.d)}</td>
+    <td class="poster-cell"><a href="${imdb(m)}" target="_blank" rel="noopener noreferrer" aria-label="Open ${m.t} on IMDb">${poster(m) ? `<img src="${poster(m)}" loading="lazy" alt="">` : ""}</a></td>
+    <td><a class="movie-link" href="${imdb(m)}" target="_blank" rel="noopener noreferrer">${m.t}</a></td><td class="num" style="color:var(--muted)">${m.y}</td>
+    <td class="diff-cell">
+      <span class="row-scores">IMDb ${pct(m.im)} &middot; Metascore ${pct(m.mc)}</span>
+      <a class="movie-link diff-track" href="${imdb(m)}" target="_blank" rel="noopener noreferrer" aria-label="Open ${m.t} on IMDb">
+        <span class="diff-fill" style="width:${Math.min(Math.abs(m.d), 100)}%;background:${diffColor(m.d)}"></span>
+        <span class="diff-value">${sdiff(m.d)}</span>
+      </a>
+    </td>
   </tr>`).join("");
   document.querySelector(sel).innerHTML =
     `<caption style="color:${color}">${title}</caption>
      <tr><th class="num">#</th><th></th><th>Title</th><th class="num">Year</th>
-     <th class="num">Metascore</th><th class="num">IMDb</th><th class="num">Diff</th></tr>` + rows;
+     <th class="num">Diff · hover for scores</th></tr>` + rows;
+  document.querySelectorAll(`${sel} .movie-row`).forEach((row, i) => {
+    row.addEventListener("click", event => {
+      if (!event.target.closest("a")) {
+        window.open(imdb(items[i]), "_blank", "noopener,noreferrer");
+      }
+    });
+    row.addEventListener("keydown", event => {
+      if (event.key === "Enter" && event.target === row) {
+        window.open(imdb(items[i]), "_blank", "noopener,noreferrer");
+      }
+    });
+  });
 }
 buildTable("#table-pos", "Critics like it more — top 20", RED, P.tables.pos);
 buildTable("#table-neg", "Users like it more — top 20", BLUE, P.tables.neg);
@@ -146,7 +178,23 @@ const dAbs = Math.ceil(Math.max(...[...P.chart1.ext, ...P.chart1.ctx]
                         .map(m => Math.abs(m.d)))) + 3;
 const toXY = (m, xKey, yKey) => ({ x: m[xKey], y: m[yKey], meta: m });
 new ApexCharts(document.querySelector("#chart1"), {
-  chart: { ...baseChart, type: "scatter", height: 780 },
+  chart: {
+    ...baseChart, type: "scatter", height: 780,
+    events: {
+      ...baseChart.events,
+      mounted: context => {
+        const movies = context.w.config.series.slice(0, 2).flatMap(series => series.data);
+        context.el.querySelectorAll(".apexcharts-datalabel").forEach((label, i) => {
+          const link = document.createElementNS("http://www.w3.org/2000/svg", "a");
+          link.setAttribute("href", imdb(movies[i].meta));
+          link.setAttribute("target", "_blank");
+          link.setAttribute("rel", "noopener noreferrer");
+          label.replaceWith(link);
+          link.appendChild(label);
+        });
+      },
+    },
+  },
   theme: darkTheme,
   series: [
     { name: "Critics like it more",
@@ -158,6 +206,15 @@ new ApexCharts(document.querySelector("#chart1"), {
   ],
   colors: [RED, BLUE, GREY],
   markers: { size: [6, 6, 3], strokeWidth: 0, hover: { sizeOffset: 2 } },
+  dataLabels: {
+    enabled: true,
+    enabledOnSeries: [0, 1],
+    formatter: (_, { seriesIndex, dataPointIndex, w }) =>
+      w.config.series[seriesIndex].data[dataPointIndex].meta.t,
+    offsetY: -9,
+    style: { fontSize: "9px", fontWeight: 400, colors: ["#dde3ec"] },
+    background: { enabled: false },
+  },
   xaxis: { min: -dAbs, max: dAbs, tickAmount: 10,
            title: { text: "Metascore − IMDb (%)" },
            labels: { formatter: v => (v > 0 ? "+" : "") + Math.round(v) } },
@@ -236,11 +293,11 @@ categoryChart("#chart-decade", P.decades, 60 + P.decades.length * 60);
 
 // ---------- agreement gallery ----------
 document.getElementById("agree-gallery").innerHTML = P.agree.map(m => `
-  <div class="agree-card" title="${m.t} (${m.y}) — Metascore ${pct(m.mc)}, IMDb ${pct(m.im)}">
+  <a class="agree-card" href="${imdb(m)}" target="_blank" rel="noopener noreferrer" title="${m.t} (${m.y}) — Metascore ${pct(m.mc)}, IMDb ${pct(m.im)}">
     ${poster(m) ? `<img src="${poster(m)}" loading="lazy">` : ""}
     <div class="ac-t">${m.t}</div>
     <div class="ac-s">${pct(m.mc)} = ${pct(m.im)}</div>
-  </div>`).join("");
+  </a>`).join("");
 </script>
 </body>
 </html>
