@@ -221,21 +221,50 @@ function timelineChart(data) {
 }
 
 // ---------- chart 2: bubbles ----------
+function drawEqualityLine(context) {
+    context.el.querySelector(".equality-line")?.remove();
+    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    svg.classList.add("equality-line");
+    svg.setAttribute("width", context.el.clientWidth);
+    svg.setAttribute("height", context.el.clientHeight);
+    svg.setAttribute("aria-hidden", "true");
+    const {translateX, translateY, gridWidth, gridHeight} = context.w.globals;
+    const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+    for (const [key, value] of Object.entries({
+        x1: translateX, y1: translateY + gridHeight,
+        x2: translateX + gridWidth, y2: translateY,
+        stroke: "#8b94a5", "stroke-width": 1.5, "stroke-dasharray": "2 4",
+    })) line.setAttribute(key, value);
+    svg.appendChild(line);
+    context.el.prepend(svg);
+}
+
 function bubbleChart(data) {
     const maxVotes = Math.max(...[...data.pos, ...data.neg, ...data.ctx]
         .map(index => dashboardData.movies[index].v));
+    const differences = data.ctx.map(index => dashboardData.movies[index].d);
+    const minDiff = Math.min(...differences), maxDiff = Math.max(...differences);
     const series = [
         ["Critics like it more", data.pos],
         ["Users like it more", data.neg],
         ["Popular movies", data.ctx],
-    ].map(([name, indexes]) => ({
+    ].map(([name, indexes], seriesIndex) => ({
         name, data: indexes.map(movie => {
             const m = dashboardData.movies[movie];
-            return {x: m.mc, y: m.im, z: 2 + 10 * Math.sqrt(m.v / maxVotes), movie};
+            const point = {x: m.mc, y: m.im, z: 2 + 10 * Math.sqrt(m.v / maxVotes), movie};
+            if (seriesIndex === 2) {
+                const t = m.d < 0 ? (1 - m.d / minDiff) / 2 :
+                    m.d > 0 ? (1 + m.d / maxDiff) / 2 : 0.5;
+                point.fillColor = `rgba(${Math.round(78 + 146 * t)},${Math.round(141 - 49 * t)},${Math.round(232 - 147 * t)},0.35)`;
+            }
+            return point;
         }),
     }));
     return new ApexCharts(document.querySelector("#chart2"), {
-        chart: {...baseChart, type: "bubble", height: "100%", parentHeightOffset: 0},
+        chart: {
+            ...baseChart, type: "bubble", height: "100%", parentHeightOffset: 0,
+            events: {...baseChart.events, mounted: drawEqualityLine, updated: drawEqualityLine}
+        },
         theme: darkTheme,
         series,
         colors: [RED, BLUE, GREY],

@@ -64,7 +64,8 @@ a:hover { text-decoration: underline; }
 .movie-hover-title { font-weight: 600; margin-bottom: 6px; }
 #chart1 { position: relative; }
 #chart1 { min-height: 795px; }
-#chart2 { aspect-ratio: 1; min-height: 0; }
+#chart2 { position: relative; aspect-ratio: 1; min-height: 0; }
+.equality-line { position: absolute; inset: 0; pointer-events: none; }
 #chart-genre { min-height: 627px; }
 #chart-decade { min-height: 675px; }
 #agree-gallery { min-height: 600px; }
