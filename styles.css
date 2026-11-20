@@ -22,11 +22,11 @@ p.sub { color: var(--muted); font-size: 13px; text-align: center; margin: 0 0 18
 }
 .ranking-card { max-width: 860px; }
 .view-more {
-  display: block; margin: 14px auto 0; padding: 8px 18px;
-  background: #232a36; border: 1px solid #465268; border-radius: 5px;
-  color: var(--text); font: inherit; cursor: pointer;
+  display: block; margin: 10px auto 0; padding: 4px;
+  background: none; border: 0; color: var(--muted);
+  font: inherit; font-size: 13px; text-decoration: underline; cursor: pointer;
 }
-.view-more:hover { background: #303b4d; }
+.view-more:hover { color: var(--text); }
 .view-more[hidden] { display: none; }
 .timeline-card { max-width: 900px; }
 .bubble-card { max-width: 752px; }
