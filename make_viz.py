@@ -7,6 +7,7 @@ payload into template.html.
 import csv
 import json
 from collections import defaultdict
+from statistics import mean
 
 MIN_YEAR = 1980          # everything older is excluded entirely
 CONTEXT1 = 300           # grey dots on the timeline chart
@@ -81,6 +82,8 @@ for g in top_genres:
     p = sorted((r for r in items if r["d"] > 0), key=lambda r: -r["d"])
     n = sorted((r for r in items if r["d"] < 0), key=lambda r: r["d"])
     genres.append({"g": g,
+                   "average": mean(r["d"] for r in items),
+                   "count": len(items),
                    "pos": [slim(r) for r in p[:TOP_GENRE]],
                    "neg": [slim(r) for r in n[:TOP_GENRE]]})
 
@@ -93,6 +96,8 @@ for d0 in range(1980, 2030, 10):
     p = sorted((r for r in items if r["d"] > 0), key=lambda r: -r["d"])
     n = sorted((r for r in items if r["d"] < 0), key=lambda r: r["d"])
     decades.append({"g": f"{d0}s",
+                    "average": mean(r["d"] for r in items),
+                    "count": len(items),
                     "pos": [slim(r) for r in p[:TOP_DECADE]],
                     "neg": [slim(r) for r in n[:TOP_DECADE]]})
 
@@ -100,7 +105,8 @@ for d0 in range(1980, 2030, 10):
 agree = [slim(r) for r in by_pop if abs(r["d"]) <= 1][:TOP_TABLE]
 
 payload = {"tables": tables, "chart1": chart1, "chart2": chart2,
-           "genres": genres, "decades": decades, "agree": agree}
+           "genres": genres, "decades": decades, "agree": agree,
+           "average": mean(r["d"] for r in rows), "count": len(rows)}
 
 print(f"{len(ext1)} timeline extremes, {len(ext2)} bubble extremes, "
       f"{len(genres)} genres, {len(decades)} decades, "
