@@ -18,7 +18,7 @@ All scores in percent; diff = Metascore − IMDb. Movies since 1980.</p>
 
 <h2>Timeline of disagreement</h2>
 <p class="sub">Most extreme movie per side per year. Right: critics like it more; left: users like it more.
-Grey: 500 popular movies. Hover for posters.</p>
+Grey: 1,000 popular movies. Hover for posters.</p>
 <div class="card timeline-card"><div id="chart1"></div></div>
 
 <h2>Metascore vs IMDb score</h2>
@@ -247,10 +247,10 @@ return new ApexCharts(document.querySelector("#chart1"), {
   colors: [RED, BLUE, GREY],
   markers: { size: [6, 6, 3], strokeWidth: 0, hover: { sizeOffset: 2 } },
   dataLabels: { enabled: false },
-  xaxis: { min: -dAbs, max: dAbs, tickAmount: 10,
+  xaxis: { min: -dAbs, max: dAbs, tickAmount: 10, crosshairs: { show: false },
            title: { text: "Metascore − IMDb (%)" },
            labels: { formatter: v => (v > 0 ? "+" : "") + Math.round(v) } },
-  yaxis: { min: 1978, max: 2028,
+  yaxis: { min: 1978, max: 2028, crosshairs: { show: false },
            labels: { formatter: v => Math.round(v) } },
   grid: { borderColor: "#232a36", padding: { left: 180, right: 180 } },
   legend: { position: "top" },

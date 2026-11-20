@@ -16,7 +16,7 @@ from urllib.request import Request, urlopen
 from PIL import Image
 
 MIN_YEAR = 1980          # everything older is excluded entirely
-CONTEXT1 = 500           # grey dots on the timeline chart
+CONTEXT1 = 1000          # grey dots on the timeline chart
 CONTEXT2 = 1000          # grey bubbles on the Metascore vs IMDb chart
 TOP_TABLE = 50           # movies available per table
 TOP_AGREE = 49           # movies in the agreement gallery
