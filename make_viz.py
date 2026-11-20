@@ -17,10 +17,10 @@ from PIL import Image
 
 MIN_YEAR = 1980          # everything older is excluded entirely
 CONTEXT1 = 100           # grey dots on the timeline chart
-CONTEXT2 = 500           # grey bubbles on the Metascore vs IMDb chart
+CONTEXT2 = 1000          # grey bubbles on the Metascore vs IMDb chart
 TOP_TABLE = 50           # movies available per table
 TOP_AGREE = 49           # movies in the agreement gallery
-TOP2 = 25                # extremes per side on the bubble chart
+TOP2 = 50                # extremes per side on the bubble chart
 TOP_GENRE = 1            # extremes per side per genre
 TOP_DECADE = 1           # extremes per side per decade
 GENRE_COUNT = 12         # how many genres to show
@@ -98,6 +98,7 @@ for g in top_genres:
                    "count": len(items),
                    "pos": [slim(r) for r in p[:TOP_GENRE]],
                    "neg": [slim(r) for r in n[:TOP_GENRE]]})
+genres.sort(key=lambda group: abs(group["average"]))
 
 # By decade: most extreme per side, 1980s .. 2020s.
 decades = []
