@@ -1,8 +1,7 @@
 window.dashboardData = {};
 
-const IMG = "https://www.metacritic.com/a/img/catalog";
 const RED = "#e05c55", BLUE = "#4e8de8", GREY = "#555e6e";
-const poster = m => m.img ? IMG + m.img : null;
+const poster = m => m.img;
 const imdb = m => `https://www.imdb.com/title/${m.id}/`;
 const pct = v => Math.round(v) + "%";
 const sdiff = v => (v > 0 ? "+" : "") + Math.round(v) + "%";

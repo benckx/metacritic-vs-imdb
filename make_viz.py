@@ -7,8 +7,13 @@ import csv
 import json
 import math
 from collections import defaultdict
+from concurrent.futures import ThreadPoolExecutor
+from io import BytesIO
 from statistics import mean
 from pathlib import Path
+from urllib.request import Request, urlopen
+
+from PIL import Image
 
 MIN_YEAR = 1980          # everything older is excluded entirely
 CONTEXT1 = 100           # grey dots on the timeline chart
@@ -19,6 +24,9 @@ TOP2 = 15                # extremes per side on the bubble chart
 TOP_GENRE = 1            # extremes per side per genre
 TOP_DECADE = 1           # extremes per side per decade
 GENRE_COUNT = 12         # how many genres to show
+POSTER_DIR = Path("posters")
+POSTER_SIZE = (236, 348)  # 2x the largest display size (gallery cards)
+POSTER_SOURCE = "https://www.metacritic.com/a/img/catalog"
 
 
 def slim(r, include_votes=True):
@@ -192,6 +200,30 @@ for name, data in payload.items():
     size = len(json.dumps(data, separators=(",", ":")).encode())
     assert size <= 10_000, f"{name} input exceeds the 10 KB budget: {size} bytes"
     print(f"{name} input: {size:,} bytes")
+
+
+def local_poster(movie):
+    """Download and shrink a Metacritic poster once; originals are ~2000x3000."""
+    if not movie["img"]:
+        return None
+    path = POSTER_DIR / f"{movie['id']}.webp"
+    if not path.exists():
+        try:
+            request = Request(POSTER_SOURCE + movie["img"], headers={"User-Agent": "Mozilla/5.0"})
+            with urlopen(request, timeout=30) as response:
+                image = Image.open(BytesIO(response.read())).convert("RGB")
+        except Exception as error:
+            print(f"poster {movie['id']} unavailable: {error}")
+            return None
+        image.thumbnail(POSTER_SIZE, Image.LANCZOS)
+        image.save(path, "WEBP", quality=80)
+    return path.as_posix()
+
+
+POSTER_DIR.mkdir(exist_ok=True)
+with ThreadPoolExecutor(8) as pool:
+    for movie, poster in zip(movies, pool.map(local_poster, movies)):
+        movie["img"] = poster
 payload["movies"] = movies
 
 print(f"{len(ext1)} timeline extremes, {len(ext2)} bubble extremes, "
