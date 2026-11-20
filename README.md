@@ -44,11 +44,11 @@ dashboard also excludes movies released before 1980 and movies without a year.
 To download fresh data and rebuild the rankings and dashboard, run:
 
 ```bash
-./refresh.sh
+./full_refresh.sh
 ```
 
-The script requires Bash, `curl`, `gunzip`, Python 3, and Pillow
-(`python3 -m pip install pillow`). It can be run from any directory and stops
+The script requires Bash, `curl`, `gunzip`, Python 3, and Pillow (`python3 -m pip install pillow`). It can be run from
+any directory and stops
 if a step fails. A failed Metacritic download leaves the previous
 `metacritic.jsonl` intact; earlier completed steps may still have updated files.
 Review the changed data and generated files before committing them.
@@ -71,18 +71,18 @@ offline. Thresholds are flags on `compare.py`
 
 ## Files
 
-| File | Role |
-|---|---|
-| `refresh.sh` | run the full refresh pipeline |
-| `fetch_imdb.sh` | download IMDb datasets |
-| `fetch_metacritic.py` | scrape Metacritic scores |
-| `compare.py` | join datasets, rank discrepancies, write the two CSVs |
-| `metacritic.jsonl` | fetched Metacritic movie data |
-| `critics_over_users.csv`, `users_over_critics.csv` | ranked movie data |
-| `make_viz.py` | precompute compact chart inputs and build the page |
-| `template.html` | dashboard markup and ApexCharts rendering code |
-| `index.html` | generated dashboard shell |
-| `styles.css` | dashboard styles |
-| `dashboard.js` | generated renderer and lazy-loading code |
-| `posters/` | generated, resized poster thumbnails |
-| `data.js` | generated, precomputed inputs and shared movie details; supports direct `file://` viewing |
+| File                                               | Role                                                                                      |
+|----------------------------------------------------|-------------------------------------------------------------------------------------------|
+| `full_refresh.sh`                                  | run the full refresh pipeline                                                             |
+| `fetch_imdb.sh`                                    | download IMDb datasets                                                                    |
+| `fetch_metacritic.py`                              | scrape Metacritic scores                                                                  |
+| `compare.py`                                       | join datasets, rank discrepancies, write the two CSVs                                     |
+| `metacritic.jsonl`                                 | fetched Metacritic movie data                                                             |
+| `critics_over_users.csv`, `users_over_critics.csv` | ranked movie data                                                                         |
+| `make_viz.py`                                      | precompute compact chart inputs and build the page                                        |
+| `template.html`                                    | dashboard markup and ApexCharts rendering code                                            |
+| `index.html`                                       | generated dashboard shell                                                                 |
+| `styles.css`                                       | dashboard styles                                                                          |
+| `dashboard.js`                                     | generated renderer and lazy-loading code                                                  |
+| `posters/`                                         | generated, resized poster thumbnails                                                      |
+| `data.js`                                          | generated, precomputed inputs and shared movie details; supports direct `file://` viewing |
