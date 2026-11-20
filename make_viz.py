@@ -17,9 +17,9 @@ from PIL import Image
 
 MIN_YEAR = 1980          # everything older is excluded entirely
 CONTEXT1 = 100           # grey dots on the timeline chart
-CONTEXT2 = 120           # grey bubbles on the Metascore vs IMDb chart
+CONTEXT2 = 200           # grey bubbles on the Metascore vs IMDb chart
 TOP_TABLE = 40           # movies available per table
-TOP_AGREE = 20           # movies in the agreement gallery
+TOP_AGREE = 50           # movies in the agreement gallery
 TOP2 = 15                # extremes per side on the bubble chart
 TOP_GENRE = 1            # extremes per side per genre
 TOP_DECADE = 1           # extremes per side per decade
@@ -124,13 +124,12 @@ def movie_series(chart, x_key, y_key, bubble=False):
         ("Popular movies", chart["ctx"]),
     ]
     series = []
-    highlight_floor = max(m["v"] for m in chart["ext"] + chart["ctx"]) / 4 if bubble else 0
-    for index, (name, movies) in enumerate(groups):
+    max_votes = max(m["v"] for m in chart["ext"] + chart["ctx"]) if bubble else 0
+    for name, movies in groups:
         points = [{"x": m[x_key], "y": m[y_key], "meta": m} for m in movies]
         if bubble:
             for point in points:
-                # Highlighted bubbles stay visible; tooltips retain the true vote count.
-                point["z"] = max(point["meta"]["v"], highlight_floor) if index < 2 else point["meta"]["v"]
+                point["z"] = round(2 + 10 * math.sqrt(point["meta"]["v"] / max_votes), 3)
         series.append({"name": name, "data": points})
     return series
 

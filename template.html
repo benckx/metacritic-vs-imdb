@@ -21,8 +21,8 @@ Grey: 100 popular movies. Hover for posters.</p>
 <div class="card timeline-card"><div id="chart1"></div></div>
 
 <h2>Metascore vs IMDb score</h2>
-<p class="sub">Colored: the 15 most extreme movies per side, with a minimum bubble size for visibility.
-Grey: 120 popular movies, with bubble size following IMDb vote count.</p>
+<p class="sub">Colored: the 15 most extreme movies per side. Grey: 200 popular movies.
+Bubble area follows IMDb vote count, with a minimum size for visibility.</p>
 <div class="card bubble-card"><div id="chart2"></div></div>
 
 <h2>Most extreme by genre</h2>
@@ -257,8 +257,7 @@ return new ApexCharts(document.querySelector("#chart2"), {
   series: data.series,
   colors: [RED, BLUE, GREY],
   fill: { type: "solid", opacity: [0.9, 0.9, 0.35] },
-  plotOptions: { bubble: { minBubbleRadius: 2, maxBubbleRadius: 10,
-                           zScaling: true } },
+  plotOptions: { bubble: { zScaling: false } },
   dataLabels: { enabled: false },
   markers: { strokeWidth: 0 },
   stroke: { show: false, width: 0 },
@@ -372,7 +371,7 @@ document.getElementById("agree-gallery").innerHTML = data.map(index => dashboard
   <a class="agree-card" href="${imdb(m)}" target="_blank" rel="noopener noreferrer" title="${m.t} (${m.y}) — Metascore ${pct(m.mc)}, IMDb ${pct(m.im)}">
     ${poster(m) ? `<img src="${poster(m)}" loading="lazy">` : ""}
     <div class="ac-t">${m.t}</div>
-    <div class="ac-s">${pct(m.mc)} = ${pct(m.im)}</div>
+    <div class="ac-s">${pct(m.mc)} · ${pct(m.im)}</div>
   </a>`).join("");
 }
 

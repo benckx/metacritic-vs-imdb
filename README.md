@@ -31,8 +31,10 @@ than users, negative the opposite.
   backend API into `metacritic.jsonl`.
 
 Movies are joined on the IMDb id embedded in Metacritic image paths, with an
-unambiguous title + year fallback. Movies released before 1980, with fewer
-than 10,000 IMDb votes, or with fewer than 7 critic reviews are excluded.
+unambiguous title + year fallback. When no eligible exact-year match exists,
+an unambiguous eligible match one year earlier or later may be used. The later
+year is displayed when sources disagree. Movies released before 1980, with
+fewer than 10,000 IMDb votes, or with fewer than 7 critic reviews are excluded.
 
 ## Pipeline
 

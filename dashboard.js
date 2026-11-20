@@ -213,8 +213,7 @@ return new ApexCharts(document.querySelector("#chart2"), {
   series: data.series,
   colors: [RED, BLUE, GREY],
   fill: { type: "solid", opacity: [0.9, 0.9, 0.35] },
-  plotOptions: { bubble: { minBubbleRadius: 2, maxBubbleRadius: 10,
-                           zScaling: true } },
+  plotOptions: { bubble: { zScaling: false } },
   dataLabels: { enabled: false },
   markers: { strokeWidth: 0 },
   stroke: { show: false, width: 0 },
@@ -328,7 +327,7 @@ document.getElementById("agree-gallery").innerHTML = data.map(index => dashboard
   <a class="agree-card" href="${imdb(m)}" target="_blank" rel="noopener noreferrer" title="${m.t} (${m.y}) — Metascore ${pct(m.mc)}, IMDb ${pct(m.im)}">
     ${poster(m) ? `<img src="${poster(m)}" loading="lazy">` : ""}
     <div class="ac-t">${m.t}</div>
-    <div class="ac-s">${pct(m.mc)} = ${pct(m.im)}</div>
+    <div class="ac-s">${pct(m.mc)} · ${pct(m.im)}</div>
   </a>`).join("");
 }
 
