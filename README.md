@@ -11,6 +11,8 @@ Open `index.html` in a browser to see the result:
 - a timeline scatter (diff on x, release year on y) highlighting the most
   extreme movie per side per year, with popular movies as context
 - a Metascore vs IMDb scatter where bubble size reflects IMDb vote count
+- the most extreme movies and average differences by genre and five-year period
+- a gallery of popular movies where scores differ by at most one point
 
 Keep `styles.css`, `dashboard.js`, `data.js`, and `posters/` beside `index.html`.
 `make_viz.py` precomputes each visualization's selected movies, averages, and
@@ -27,16 +29,31 @@ than users, negative the opposite.
 - **IMDb**: official [datasets](https://datasets.imdbws.com/)
   (`title.ratings.tsv`, `title.basics.tsv`), not committed — fetch them with
   `./fetch_imdb.sh`.
-- **Metacritic**: critic scores for ~17,500 movies fetched from the site's
+- **Metacritic**: critic scores fetched from the site's
   backend API into `metacritic.jsonl`.
 
 Movies are joined on the IMDb id embedded in Metacritic image paths, with an
 unambiguous title + year fallback. When no eligible exact-year match exists,
 an unambiguous eligible match one year earlier or later may be used. The later
-year is displayed when sources disagree. Movies released before 1980, with
-fewer than 10,000 IMDb votes, or with fewer than 7 critic reviews are excluded.
+year is displayed when sources disagree. Movies with fewer than 10,000 IMDb
+votes or fewer than 7 critic reviews are excluded from the rankings. The
+dashboard also excludes movies released before 1980 and movies without a year.
 
-## Pipeline
+## Refreshing the data
+
+To download fresh data and rebuild the rankings and dashboard, run:
+
+```bash
+./refresh.sh
+```
+
+The script requires Bash, `curl`, `gunzip`, Python 3, and Pillow
+(`python3 -m pip install pillow`). It can be run from any directory and stops
+if a step fails. A failed Metacritic download leaves the previous
+`metacritic.jsonl` intact; earlier completed steps may still have updated files.
+Review the changed data and generated files before committing them.
+
+The individual steps are:
 
 ```bash
 ./fetch_imdb.sh            # download and decompress the IMDb datasets
@@ -45,7 +62,7 @@ python3 compare.py           # join + rank -> critics_over_users.csv, users_over
 python3 make_viz.py          # generate index.html, dashboard.js, and data.js
 ```
 
-`make_viz.py` downloads each poster it needs once, shrinks it to 236×348 WebP
+`make_viz.py` downloads each poster it needs once, shrinks it to fit 236×348 WebP
 in `posters/` (Metacritic originals are ~2000×3000, ~1 MB), and reuses cached
 files afterwards. It requires Pillow (`pip install pillow`). `compare.py` runs
 offline. Thresholds are flags on `compare.py`
@@ -56,9 +73,12 @@ offline. Thresholds are flags on `compare.py`
 
 | File | Role |
 |---|---|
+| `refresh.sh` | run the full refresh pipeline |
 | `fetch_imdb.sh` | download IMDb datasets |
 | `fetch_metacritic.py` | scrape Metacritic scores |
 | `compare.py` | join datasets, rank discrepancies, write the two CSVs |
+| `metacritic.jsonl` | fetched Metacritic movie data |
+| `critics_over_users.csv`, `users_over_critics.csv` | ranked movie data |
 | `make_viz.py` | precompute compact chart inputs and build the page |
 | `template.html` | dashboard markup and ApexCharts rendering code |
 | `index.html` | generated dashboard shell |
