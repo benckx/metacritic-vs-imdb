@@ -100,15 +100,17 @@ for g in top_genres:
                    "neg": [slim(r) for r in n[:TOP_GENRE]]})
 genres.sort(key=lambda group: abs(group["average"]))
 
-# By period: most extreme per side in five-year slices, 1980 .. 2029.
+# By period: most extreme per side in five-year slices.
 periods = []
-for start in range(1980, 2030, 5):
+latest_year = max(r["y"] for r in rows)
+for start in range(1980, latest_year + 1, 5):
     items = [r for r in rows if start <= r["y"] < start + 5]
     if not items:
         continue
     p = sorted((r for r in items if r["d"] > 0), key=lambda r: -r["d"])
     n = sorted((r for r in items if r["d"] < 0), key=lambda r: r["d"])
-    periods.append({"g": f"{start}-{start + 4}",
+    end = min(start + 4, latest_year)
+    periods.append({"g": f"{start}-{end}" if start != end else str(start),
                     "average": mean(r["d"] for r in items),
                     "count": len(items),
                     "pos": [slim(r) for r in p[:TOP_PERIOD]],
