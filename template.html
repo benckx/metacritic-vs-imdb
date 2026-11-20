@@ -3,7 +3,6 @@
 <head>
 <meta charset="utf-8">
 <title>Critics vs IMDb users — rating discrepancy</title>
-<script src="https://cdn.jsdelivr.net/npm/apexcharts@4"></script>
 <style>
   :root {
     --bg: #0e1117; --card: #161b24; --border: #232a36;
@@ -51,6 +50,15 @@
   .score-line { display: flex; justify-content: space-between; gap: 24px; padding: 3px 0; }
   .score-line span { color: var(--muted); }
   #chart1 { position: relative; }
+  #chart1 { min-height: 795px; }
+  #chart2 { min-height: 655px; }
+  #chart-genre { min-height: 673px; }
+  #chart-decade { min-height: 435px; }
+  #agree-gallery { min-height: 600px; }
+  .load-error { color: var(--red); padding: 16px; }
+  #chart-genre, #chart-decade { position: relative; }
+  .mean-arrows { position: absolute; inset: 0; pointer-events: none; }
+  .mean-arrow { pointer-events: stroke; }
   .timeline-titles { position: absolute; inset: 0; pointer-events: none; }
   .timeline-title { position: absolute; pointer-events: auto; font-size: 10px; line-height: 14px;
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -86,20 +94,22 @@ All scores in percent; diff = Metascore − IMDb. Movies since 1980.</p>
 <div class="card" style="max-width:860px"><table id="table-neg"></table></div>
 
 <h2>Timeline of disagreement</h2>
-<p class="sub">Most extreme movie per side per year. Right: critics like it more; left: users like it more. Grey: popular movies. Hover for posters.</p>
+<p class="sub">Most extreme movie per side per year. Right: critics like it more; left: users like it more.
+Grey: 100 popular movies. Hover for posters.</p>
 <div class="card" style="max-width:900px"><div id="chart1"></div></div>
 
 <h2>Metascore vs IMDb score</h2>
-<p class="sub">Bubble size = IMDb vote count. Colored: the 10 most extreme movies per side.</p>
+<p class="sub">Colored: the 15 most extreme movies per side, with a minimum bubble size for visibility.
+Grey: 120 popular movies, with bubble size following IMDb vote count.</p>
 <div class="card" style="max-width:940px"><div id="chart2"></div></div>
 
 <h2>Most extreme by genre</h2>
-<p class="sub">One most extreme movie per side for each genre. Green: genre mean; dashed line: dataset mean.
+<p class="sub">One most extreme movie per side for each genre. Arrows: mean differences, colored by direction, including the dataset overall.
 Means use signed differences, with equal weight per movie since 1980.</p>
 <div class="card" style="max-width:900px"><div id="chart-genre"></div></div>
 
 <h2>Most extreme by decade</h2>
-<p class="sub">One most extreme movie per side for each decade. Green: decade mean; dashed line: dataset mean.
+<p class="sub">One most extreme movie per side for each decade. Arrows: mean differences, colored by direction, including the dataset overall.
 Means use signed differences, with equal weight per movie since 1980.</p>
 <div class="card" style="max-width:900px"><div id="chart-decade"></div></div>
 
@@ -110,7 +120,7 @@ Means use signed differences, with equal weight per movie since 1980.</p>
 </div>
 <div id="score-tooltip" role="tooltip" hidden></div>
 <script>
-const P = /*PAYLOAD*/;
+window.dashboardData = {};
 
 const IMG = "https://www.metacritic.com/a/img/catalog";
 const RED = "#e05c55", BLUE = "#4e8de8", GREY = "#555e6e";
@@ -118,6 +128,7 @@ const poster = m => m.img ? IMG + m.img : null;
 const imdb = m => `https://www.imdb.com/title/${m.id}/`;
 const pct = v => Math.round(v) + "%";
 const sdiff = v => (v > 0 ? "+" : "") + Math.round(v) + "%";
+const pointMeta = point => point.movie === undefined ? point.meta : dashboardData.movies[point.movie];
 
 // ---------- shared tooltip ----------
 function tipHTML(m) {
@@ -128,7 +139,7 @@ function tipHTML(m) {
     diff ${sdiff(m.d)}<br>${m.v.toLocaleString()} votes</div></div></div>`;
 }
 const customTip = ({ seriesIndex, dataPointIndex, w }) => {
-  const meta = w.config.series[seriesIndex].data[dataPointIndex].meta;
+  const meta = pointMeta(w.config.series[seriesIndex].data[dataPointIndex]);
   if (meta.average !== undefined) {
     return `<div class="apex-tip"><div><div class="tt">${meta.g} mean</div>
       <div class="ts">Signed difference: ${meta.average.toFixed(1)} percentage points<br>
@@ -142,10 +153,10 @@ const baseChart = {
   fontFamily: "system-ui, sans-serif",
   toolbar: { show: false },
   zoom: { enabled: false },
-  animations: { enabled: true, speed: 500 },
+  animations: { enabled: false },
   events: {
     dataPointSelection: (_, __, { seriesIndex, dataPointIndex, w }) => {
-      const movie = w.config.series[seriesIndex].data[dataPointIndex].meta;
+      const movie = pointMeta(w.config.series[seriesIndex].data[dataPointIndex]);
       if (movie.id) window.open(imdb(movie), "_blank", "noopener,noreferrer");
     },
   },
@@ -219,13 +230,7 @@ function buildTable(sel, title, color, items) {
     });
   });
 }
-buildTable("#table-pos", "Critics like it more — top 20", RED, P.tables.pos);
-buildTable("#table-neg", "Users like it more — top 20", BLUE, P.tables.neg);
-
 // ---------- chart 1: timeline ----------
-const dAbs = Math.ceil(Math.max(...[...P.chart1.ext, ...P.chart1.ctx]
-                        .map(m => Math.abs(m.d)))) + 3;
-const toXY = (m, xKey, yKey) => ({ x: m[xKey], y: m[yKey], meta: m });
 function alignTimelineTitles(context) {
   let titles = context.el.querySelector(".timeline-titles");
   if (!titles) {
@@ -239,7 +244,8 @@ function alignTimelineTitles(context) {
   const right = translateX + gridWidth + 12;
   const width = context.el.clientWidth;
   context.w.config.series.slice(0, 2).forEach(series => {
-    series.data.forEach(({ meta: movie }) => {
+    series.data.forEach(point => {
+      const movie = pointMeta(point);
       const label = document.createElement("a");
       const left = movie.d < 0;
       label.className = "timeline-title " + (left ? "left" : "right");
@@ -255,7 +261,9 @@ function alignTimelineTitles(context) {
     });
   });
 }
-new ApexCharts(document.querySelector("#chart1"), {
+function timelineChart(data) {
+const dAbs = data.limit;
+return new ApexCharts(document.querySelector("#chart1"), {
   chart: {
     ...baseChart, type: "scatter", height: 780,
     events: {
@@ -265,14 +273,7 @@ new ApexCharts(document.querySelector("#chart1"), {
     },
   },
   theme: darkTheme,
-  series: [
-    { name: "Critics like it more",
-      data: P.chart1.ext.filter(m => m.d > 0).map(m => toXY(m, "d", "y")) },
-    { name: "Users like it more",
-      data: P.chart1.ext.filter(m => m.d < 0).map(m => toXY(m, "d", "y")) },
-    { name: "Popular movies",
-      data: P.chart1.ctx.map(m => toXY(m, "d", "y")) },
-  ],
+  series: data.series,
   colors: [RED, BLUE, GREY],
   markers: { size: [6, 6, 3], strokeWidth: 0, hover: { sizeOffset: 2 } },
   dataLabels: { enabled: false },
@@ -287,23 +288,17 @@ new ApexCharts(document.querySelector("#chart1"), {
   annotations: { xaxis: [{ x: 0, strokeDashArray: 0, borderColor: "#49536400" },
                          { x: 0, borderColor: "#6b7689" }] },
 }).render();
+}
 
 // ---------- chart 2: bubbles ----------
-const vMax = Math.max(...P.chart2.ctx.concat(P.chart2.ext).map(m => m.v));
-const toBubble = m => ({ x: m.mc, y: m.im, z: m.v, meta: m });
-new ApexCharts(document.querySelector("#chart2"), {
+function bubbleChart(data) {
+return new ApexCharts(document.querySelector("#chart2"), {
   chart: { ...baseChart, type: "bubble", height: 640 },
   theme: darkTheme,
-  series: [
-    { name: "Critics like it more",
-      data: P.chart2.ext.filter(m => m.d > 0).map(toBubble) },
-    { name: "Users like it more",
-      data: P.chart2.ext.filter(m => m.d < 0).map(toBubble) },
-    { name: "Popular movies", data: P.chart2.ctx.map(toBubble) },
-  ],
+  series: data.series,
   colors: [RED, BLUE, GREY],
   fill: { type: "solid", opacity: [0.9, 0.9, 0.35] },
-  plotOptions: { bubble: { minBubbleRadius: 2, maxBubbleRadius: 18,
+  plotOptions: { bubble: { minBubbleRadius: 2, maxBubbleRadius: 10,
                            zScaling: true } },
   dataLabels: { enabled: false },
   markers: { strokeWidth: 0 },
@@ -316,30 +311,70 @@ new ApexCharts(document.querySelector("#chart2"), {
   legend: { position: "top" },
   tooltip: { custom: customTip, intersect: true, shared: false },
 }).render();
+}
 
 // ---------- category scatter (genres / decades) ----------
-function categoryChart(sel, groups, height) {
-  const labels = groups.map(g => g.g);
-  const mk = (list, idx) => list.map(m => ({ x: m.d, y: idx, meta: m }));
-  let posPts = [], negPts = [];
-  groups.forEach((g, i) => {
-    posPts = posPts.concat(mk(g.pos, i));
-    negPts = negPts.concat(mk(g.neg, i));
+function drawMeanArrows(context) {
+  const svgNS = "http://www.w3.org/2000/svg";
+  context.el.querySelector(".mean-arrows")?.remove();
+  const svg = document.createElementNS(svgNS, "svg");
+  svg.classList.add("mean-arrows");
+  svg.setAttribute("width", context.el.clientWidth);
+  svg.setAttribute("height", context.el.clientHeight);
+  const defs = document.createElementNS(svgNS, "defs");
+  const markerId = `${context.el.id}-mean-head`;
+  for (const [direction, color] of [["positive", RED], ["negative", BLUE], ["zero", GREY]]) {
+    const head = document.createElementNS(svgNS, "marker");
+    for (const [key, value] of Object.entries({
+      id: `${markerId}-${direction}`, viewBox: "0 0 10 10", refX: 9, refY: 5,
+      markerWidth: 5, markerHeight: 5, orient: "auto",
+    })) head.setAttribute(key, value);
+    const triangle = document.createElementNS(svgNS, "path");
+    triangle.setAttribute("d", "M 0 0 L 10 5 L 0 10 z");
+    triangle.setAttribute("fill", color);
+    head.appendChild(triangle);
+    defs.appendChild(head);
+  }
+  svg.appendChild(defs);
+  const { translateX, translateY, gridWidth, gridHeight } = context.w.globals;
+  const xaxis = context.w.config.xaxis;
+  const yaxis = context.w.config.yaxis[0];
+  const x = value => translateX + gridWidth * (value - xaxis.min) / (xaxis.max - xaxis.min);
+  const y = value => translateY + gridHeight * (yaxis.max - value) / (yaxis.max - yaxis.min);
+  context.w.config.series[2].data.forEach(point => {
+    const line = document.createElementNS(svgNS, "line");
+    const direction = point.x > 0 ? "positive" : point.x < 0 ? "negative" : "zero";
+    const color = point.x > 0 ? RED : point.x < 0 ? BLUE : GREY;
+    for (const [key, value] of Object.entries({
+      x1: x(0), x2: x(point.x), y1: y(point.y), y2: y(point.y),
+      stroke: color, "stroke-width": 2, "marker-end": `url(#${markerId}-${direction})`,
+    })) line.setAttribute(key, value);
+    line.classList.add("mean-arrow");
+    line.addEventListener("pointerenter", event => {
+      scoreTooltip.innerHTML = customTip({
+        seriesIndex: 2,
+        dataPointIndex: point.y,
+        w: context.w,
+      });
+      scoreTooltip.hidden = false;
+      positionScores(event.clientX, event.clientY);
+    });
+    line.addEventListener("pointermove", event => positionScores(event.clientX, event.clientY));
+    line.addEventListener("pointerleave", () => { scoreTooltip.hidden = true; });
+    svg.appendChild(line);
   });
-  const all = posPts.concat(negPts).map(p => Math.abs(p.x));
-  const lim = Math.ceil(Math.max(...all)) + 4;
-  new ApexCharts(document.querySelector(sel), {
-    chart: { ...baseChart, type: "scatter", height },
+  context.el.appendChild(svg);
+}
+function categoryChart(sel, data) {
+  const labels = data.labels;
+  const lim = data.limit;
+  return new ApexCharts(document.querySelector(sel), {
+    chart: { ...baseChart, type: "scatter", height: data.height,
+      events: { ...baseChart.events, mounted: drawMeanArrows, updated: drawMeanArrows } },
     theme: darkTheme,
-    series: [
-      { name: "Critics like it more", data: posPts },
-      { name: "Users like it more", data: negPts },
-      { name: "Category mean", data: groups.map((group, i) => ({
-        x: group.average, y: i, meta: group,
-      })) },
-    ],
-    colors: [RED, BLUE, "#4caf7d"],
-    markers: { size: 6, strokeWidth: 0, hover: { sizeOffset: 2 } },
+    series: data.series,
+    colors: [RED, BLUE, GREY],
+    markers: { size: [6, 6, 0], strokeWidth: 0, hover: { sizeOffset: 0 } },
     xaxis: { min: -lim, max: lim, tickAmount: 10,
              title: { text: "Metascore − IMDb (%)" },
              labels: { formatter: v => (v > 0 ? "+" : "") + Math.round(v) } },
@@ -349,24 +384,65 @@ function categoryChart(sel, groups, height) {
     grid: { borderColor: "#232a36" },
     legend: { position: "top" },
     tooltip: { custom: customTip, intersect: true, shared: false },
-    annotations: { xaxis: [
-      { x: 0, borderColor: "#6b7689" },
-      { x: P.average, borderColor: "#4caf7d", strokeDashArray: 5,
-        label: { text: `Dataset mean: ${P.average.toFixed(1)} pp`,
-          style: { color: "#dde3ec", background: "#202938" } } },
-    ] },
+    annotations: { xaxis: [{ x: 0, borderColor: "#6b7689", strokeDashArray: 0 }] },
   }).render();
 }
-categoryChart("#chart-genre", P.genres, 60 + P.genres.length * 46);
-categoryChart("#chart-decade", P.decades, 60 + P.decades.length * 60);
 
 // ---------- agreement gallery ----------
-document.getElementById("agree-gallery").innerHTML = P.agree.map(m => `
+function agreementGallery(data) {
+document.getElementById("agree-gallery").innerHTML = data.map(index => dashboardData.movies[index]).map(m => `
   <a class="agree-card" href="${imdb(m)}" target="_blank" rel="noopener noreferrer" title="${m.t} (${m.y}) — Metascore ${pct(m.mc)}, IMDb ${pct(m.im)}">
     ${poster(m) ? `<img src="${poster(m)}" loading="lazy">` : ""}
     <div class="ac-t">${m.t}</div>
     <div class="ac-s">${pct(m.mc)} = ${pct(m.im)}</div>
   </a>`).join("");
+}
+
+// A script data file keeps direct file:// viewing possible without fetch/CORS.
+function loadScript(src) {
+  return new Promise((resolve, reject) => {
+    const script = document.createElement("script");
+    script.src = src;
+    script.onload = resolve;
+    script.onerror = () => reject(new Error(`Unable to load ${src}`));
+    document.head.appendChild(script);
+  });
+}
+function showLoadError(element, error) {
+  console.error(error);
+  const message = document.createElement("p");
+  message.className = "load-error";
+  message.textContent = "Unable to load this view. Check your connection and reload the page.";
+  element.appendChild(message);
+}
+let apexReady;
+const views = new Map([
+  ["chart1", { key: "chart1", render: timelineChart }],
+  ["chart2", { key: "chart2", render: bubbleChart }],
+  ["chart-genre", { key: "genres", render: data =>
+    categoryChart("#chart-genre", data) }],
+  ["chart-decade", { key: "decades", render: data =>
+    categoryChart("#chart-decade", data) }],
+  ["agree-gallery", { key: "agree", render: agreementGallery }],
+]);
+const observer = new IntersectionObserver(entries => {
+  for (const entry of entries) {
+    if (!entry.isIntersecting) continue;
+    observer.unobserve(entry.target);
+    const view = views.get(entry.target.id);
+    const library = view.key === "agree" ? Promise.resolve() :
+      (apexReady ||= loadScript("https://cdn.jsdelivr.net/npm/apexcharts@4"));
+    library.then(() => view.render(dashboardData[view.key]))
+      .catch(error => showLoadError(entry.target, error));
+  }
+}, { rootMargin: "150px" });
+loadScript("data.js").then(() => {
+  buildTable("#table-pos", "Critics like it more — top 20", RED,
+    dashboardData.tables.pos.map(index => dashboardData.movies[index]));
+  buildTable("#table-neg", "Users like it more — top 20", BLUE,
+    dashboardData.tables.neg.map(index => dashboardData.movies[index]));
+    for (const id of views.keys()) observer.observe(document.getElementById(id));
+}).catch(error => showLoadError(document.getElementById("table-pos"), error));
 </script>
 </body>
 </html>

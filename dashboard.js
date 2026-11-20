@@ -1,0 +1,323 @@
+window.dashboardData = {};
+
+const IMG = "https://www.metacritic.com/a/img/catalog";
+const RED = "#e05c55", BLUE = "#4e8de8", GREY = "#555e6e";
+const poster = m => m.img ? IMG + m.img : null;
+const imdb = m => `https://www.imdb.com/title/${m.id}/`;
+const pct = v => Math.round(v) + "%";
+const sdiff = v => (v > 0 ? "+" : "") + Math.round(v) + "%";
+const pointMeta = point => point.movie === undefined ? point.meta : dashboardData.movies[point.movie];
+
+// ---------- shared tooltip ----------
+function tipHTML(m) {
+  const img = poster(m) ? `<img src="${poster(m)}" loading="lazy">` : "";
+  return `<div class="apex-tip">${img}<div>
+    <div class="tt">${m.t} (${m.y})</div>
+    <div class="ts">Metascore ${pct(m.mc)} &middot; IMDb ${pct(m.im)}<br>
+    diff ${sdiff(m.d)}<br>${m.v.toLocaleString()} votes</div></div></div>`;
+}
+const customTip = ({ seriesIndex, dataPointIndex, w }) => {
+  const meta = pointMeta(w.config.series[seriesIndex].data[dataPointIndex]);
+  if (meta.average !== undefined) {
+    return `<div class="apex-tip"><div><div class="tt">${meta.g} mean</div>
+      <div class="ts">Signed difference: ${meta.average.toFixed(1)} percentage points<br>
+      ${meta.count.toLocaleString()} movies · equal weight per movie</div></div></div>`;
+  }
+  return tipHTML(meta);
+};
+
+const baseChart = {
+  background: "transparent",
+  fontFamily: "system-ui, sans-serif",
+  toolbar: { show: false },
+  zoom: { enabled: false },
+  animations: { enabled: false },
+  events: {
+    dataPointSelection: (_, __, { seriesIndex, dataPointIndex, w }) => {
+      const movie = pointMeta(w.config.series[seriesIndex].data[dataPointIndex]);
+      if (movie.id) window.open(imdb(movie), "_blank", "noopener,noreferrer");
+    },
+  },
+};
+const darkTheme = { mode: "dark" };
+
+// ---------- tables ----------
+function diffColor(d) {
+  const a = Math.min(Math.abs(d) / 50, 1) * 0.75 + 0.1;
+  return d >= 0 ? `rgba(224,92,85,${a})` : `rgba(78,141,232,${a})`;
+}
+const scoreTooltip = document.getElementById("score-tooltip");
+function positionScores(x, y) {
+  const gap = 14;
+  const box = scoreTooltip.getBoundingClientRect();
+  scoreTooltip.style.left = Math.max(8, Math.min(x + gap, innerWidth - box.width - 8)) + "px";
+  scoreTooltip.style.top = Math.max(8, Math.min(y + gap, innerHeight - box.height - 8)) + "px";
+}
+function showScores(movie, x, y) {
+  scoreTooltip.innerHTML = `<div class="score-line"><span>IMDb</span><strong>${pct(movie.im)}</strong></div>
+    <div class="score-line"><span>Metacritic</span><strong>${pct(movie.mc)}</strong></div>`;
+  scoreTooltip.hidden = false;
+  positionScores(x, y);
+}
+function buildTable(sel, title, color, items) {
+  const rows = items.map((m, i) => `<tr class="movie-row" tabindex="0">
+    <td class="num" style="color:var(--muted)">${i + 1}</td>
+    <td class="poster-cell"><a href="${imdb(m)}" target="_blank" rel="noopener noreferrer" aria-label="Open ${m.t} on IMDb">${poster(m) ? `<img src="${poster(m)}" loading="lazy" alt="">` : ""}</a></td>
+    <td><a class="movie-link" href="${imdb(m)}" target="_blank" rel="noopener noreferrer">${m.t} <span style="color:var(--muted)">(${m.y})</span></a></td>
+    <td class="diff-cell">
+      <a class="movie-link diff-track" href="${imdb(m)}" target="_blank" rel="noopener noreferrer" aria-label="Open ${m.t} on IMDb">
+        <span class="diff-fill" style="width:${Math.min(Math.abs(m.d), 100)}%;background:${diffColor(m.d)}"></span>
+        <span class="diff-value">${sdiff(m.d)}</span>
+      </a>
+    </td>
+  </tr>`).join("");
+  document.querySelector(sel).innerHTML =
+    `<caption style="color:${color}">${title}</caption>
+     <tr><th class="num">#</th><th></th><th>Title</th>
+     <th class="num">Diff · hover for scores</th></tr>` + rows;
+  document.querySelectorAll(`${sel} .movie-row`).forEach((row, i) => {
+    row.addEventListener("pointerenter", event => {
+      row.setAttribute("aria-describedby", "score-tooltip");
+      showScores(items[i], event.clientX, event.clientY);
+    });
+    row.addEventListener("pointermove", event => positionScores(event.clientX, event.clientY));
+    row.addEventListener("pointerleave", () => {
+      scoreTooltip.hidden = true;
+      row.removeAttribute("aria-describedby");
+    });
+    row.addEventListener("focusin", () => {
+      const box = row.querySelector(".diff-track").getBoundingClientRect();
+      row.setAttribute("aria-describedby", "score-tooltip");
+      showScores(items[i], box.left, box.top);
+    });
+    row.addEventListener("focusout", event => {
+      if (!row.contains(event.relatedTarget)) {
+        scoreTooltip.hidden = true;
+        row.removeAttribute("aria-describedby");
+      }
+    });
+    row.addEventListener("click", event => {
+      if (!event.target.closest("a")) {
+        window.open(imdb(items[i]), "_blank", "noopener,noreferrer");
+      }
+    });
+    row.addEventListener("keydown", event => {
+      if (event.key === "Enter" && event.target === row) {
+        window.open(imdb(items[i]), "_blank", "noopener,noreferrer");
+      }
+    });
+  });
+}
+// ---------- chart 1: timeline ----------
+function alignTimelineTitles(context) {
+  let titles = context.el.querySelector(".timeline-titles");
+  if (!titles) {
+    titles = document.createElement("div");
+    titles.className = "timeline-titles";
+    context.el.appendChild(titles);
+  }
+  titles.replaceChildren();
+  const { translateX, translateY, gridWidth, gridHeight } = context.w.globals;
+  const axis = context.w.config.yaxis[0];
+  const right = translateX + gridWidth + 12;
+  const width = context.el.clientWidth;
+  context.w.config.series.slice(0, 2).forEach(series => {
+    series.data.forEach(point => {
+      const movie = pointMeta(point);
+      const label = document.createElement("a");
+      const left = movie.d < 0;
+      label.className = "timeline-title " + (left ? "left" : "right");
+      label.href = imdb(movie);
+      label.target = "_blank";
+      label.rel = "noopener noreferrer";
+      label.textContent = movie.t;
+      label.title = `${movie.t} (${movie.y})`;
+      label.style.left = (left ? 0 : right) + "px";
+      label.style.width = Math.max(0, left ? translateX - 36 : width - right) + "px";
+      label.style.top = (translateY + gridHeight * (axis.max - movie.y) / (axis.max - axis.min) - 7) + "px";
+      titles.appendChild(label);
+    });
+  });
+}
+function timelineChart(data) {
+const dAbs = data.limit;
+return new ApexCharts(document.querySelector("#chart1"), {
+  chart: {
+    ...baseChart, type: "scatter", height: 780,
+    events: {
+      ...baseChart.events,
+      mounted: alignTimelineTitles,
+      updated: alignTimelineTitles,
+    },
+  },
+  theme: darkTheme,
+  series: data.series,
+  colors: [RED, BLUE, GREY],
+  markers: { size: [6, 6, 3], strokeWidth: 0, hover: { sizeOffset: 2 } },
+  dataLabels: { enabled: false },
+  xaxis: { min: -dAbs, max: dAbs, tickAmount: 10,
+           title: { text: "Metascore − IMDb (%)" },
+           labels: { formatter: v => (v > 0 ? "+" : "") + Math.round(v) } },
+  yaxis: { min: 1978, max: 2028,
+           labels: { formatter: v => Math.round(v) } },
+  grid: { borderColor: "#232a36", padding: { left: 180, right: 180 } },
+  legend: { position: "top" },
+  tooltip: { custom: customTip, intersect: true, shared: false },
+  annotations: { xaxis: [{ x: 0, strokeDashArray: 0, borderColor: "#49536400" },
+                         { x: 0, borderColor: "#6b7689" }] },
+}).render();
+}
+
+// ---------- chart 2: bubbles ----------
+function bubbleChart(data) {
+return new ApexCharts(document.querySelector("#chart2"), {
+  chart: { ...baseChart, type: "bubble", height: 640 },
+  theme: darkTheme,
+  series: data.series,
+  colors: [RED, BLUE, GREY],
+  fill: { type: "solid", opacity: [0.9, 0.9, 0.35] },
+  plotOptions: { bubble: { minBubbleRadius: 2, maxBubbleRadius: 10,
+                           zScaling: true } },
+  dataLabels: { enabled: false },
+  markers: { strokeWidth: 0 },
+  stroke: { show: false, width: 0 },
+  xaxis: { min: 0, max: 100, tickAmount: 10, title: { text: "Metascore (%)" },
+           labels: { formatter: v => Math.round(v) } },
+  yaxis: { min: 0, max: 100, tickAmount: 10,
+           title: { text: "IMDb score (%)" } },
+  grid: { borderColor: "#232a36" },
+  legend: { position: "top" },
+  tooltip: { custom: customTip, intersect: true, shared: false },
+}).render();
+}
+
+// ---------- category scatter (genres / decades) ----------
+function drawMeanArrows(context) {
+  const svgNS = "http://www.w3.org/2000/svg";
+  context.el.querySelector(".mean-arrows")?.remove();
+  const svg = document.createElementNS(svgNS, "svg");
+  svg.classList.add("mean-arrows");
+  svg.setAttribute("width", context.el.clientWidth);
+  svg.setAttribute("height", context.el.clientHeight);
+  const defs = document.createElementNS(svgNS, "defs");
+  const markerId = `${context.el.id}-mean-head`;
+  for (const [direction, color] of [["positive", RED], ["negative", BLUE], ["zero", GREY]]) {
+    const head = document.createElementNS(svgNS, "marker");
+    for (const [key, value] of Object.entries({
+      id: `${markerId}-${direction}`, viewBox: "0 0 10 10", refX: 9, refY: 5,
+      markerWidth: 5, markerHeight: 5, orient: "auto",
+    })) head.setAttribute(key, value);
+    const triangle = document.createElementNS(svgNS, "path");
+    triangle.setAttribute("d", "M 0 0 L 10 5 L 0 10 z");
+    triangle.setAttribute("fill", color);
+    head.appendChild(triangle);
+    defs.appendChild(head);
+  }
+  svg.appendChild(defs);
+  const { translateX, translateY, gridWidth, gridHeight } = context.w.globals;
+  const xaxis = context.w.config.xaxis;
+  const yaxis = context.w.config.yaxis[0];
+  const x = value => translateX + gridWidth * (value - xaxis.min) / (xaxis.max - xaxis.min);
+  const y = value => translateY + gridHeight * (yaxis.max - value) / (yaxis.max - yaxis.min);
+  context.w.config.series[2].data.forEach(point => {
+    const line = document.createElementNS(svgNS, "line");
+    const direction = point.x > 0 ? "positive" : point.x < 0 ? "negative" : "zero";
+    const color = point.x > 0 ? RED : point.x < 0 ? BLUE : GREY;
+    for (const [key, value] of Object.entries({
+      x1: x(0), x2: x(point.x), y1: y(point.y), y2: y(point.y),
+      stroke: color, "stroke-width": 2, "marker-end": `url(#${markerId}-${direction})`,
+    })) line.setAttribute(key, value);
+    line.classList.add("mean-arrow");
+    line.addEventListener("pointerenter", event => {
+      scoreTooltip.innerHTML = customTip({
+        seriesIndex: 2,
+        dataPointIndex: point.y,
+        w: context.w,
+      });
+      scoreTooltip.hidden = false;
+      positionScores(event.clientX, event.clientY);
+    });
+    line.addEventListener("pointermove", event => positionScores(event.clientX, event.clientY));
+    line.addEventListener("pointerleave", () => { scoreTooltip.hidden = true; });
+    svg.appendChild(line);
+  });
+  context.el.appendChild(svg);
+}
+function categoryChart(sel, data) {
+  const labels = data.labels;
+  const lim = data.limit;
+  return new ApexCharts(document.querySelector(sel), {
+    chart: { ...baseChart, type: "scatter", height: data.height,
+      events: { ...baseChart.events, mounted: drawMeanArrows, updated: drawMeanArrows } },
+    theme: darkTheme,
+    series: data.series,
+    colors: [RED, BLUE, GREY],
+    markers: { size: [6, 6, 0], strokeWidth: 0, hover: { sizeOffset: 0 } },
+    xaxis: { min: -lim, max: lim, tickAmount: 10,
+             title: { text: "Metascore − IMDb (%)" },
+             labels: { formatter: v => (v > 0 ? "+" : "") + Math.round(v) } },
+    yaxis: { min: -1, max: labels.length,
+             tickAmount: labels.length + 1,
+             labels: { formatter: v => labels[Math.round(v)] ?? "" } },
+    grid: { borderColor: "#232a36" },
+    legend: { position: "top" },
+    tooltip: { custom: customTip, intersect: true, shared: false },
+    annotations: { xaxis: [{ x: 0, borderColor: "#6b7689", strokeDashArray: 0 }] },
+  }).render();
+}
+
+// ---------- agreement gallery ----------
+function agreementGallery(data) {
+document.getElementById("agree-gallery").innerHTML = data.map(index => dashboardData.movies[index]).map(m => `
+  <a class="agree-card" href="${imdb(m)}" target="_blank" rel="noopener noreferrer" title="${m.t} (${m.y}) — Metascore ${pct(m.mc)}, IMDb ${pct(m.im)}">
+    ${poster(m) ? `<img src="${poster(m)}" loading="lazy">` : ""}
+    <div class="ac-t">${m.t}</div>
+    <div class="ac-s">${pct(m.mc)} = ${pct(m.im)}</div>
+  </a>`).join("");
+}
+
+// A script data file keeps direct file:// viewing possible without fetch/CORS.
+function loadScript(src) {
+  return new Promise((resolve, reject) => {
+    const script = document.createElement("script");
+    script.src = src;
+    script.onload = resolve;
+    script.onerror = () => reject(new Error(`Unable to load ${src}`));
+    document.head.appendChild(script);
+  });
+}
+function showLoadError(element, error) {
+  console.error(error);
+  const message = document.createElement("p");
+  message.className = "load-error";
+  message.textContent = "Unable to load this view. Check your connection and reload the page.";
+  element.appendChild(message);
+}
+let apexReady;
+const views = new Map([
+  ["chart1", { key: "chart1", render: timelineChart }],
+  ["chart2", { key: "chart2", render: bubbleChart }],
+  ["chart-genre", { key: "genres", render: data =>
+    categoryChart("#chart-genre", data) }],
+  ["chart-decade", { key: "decades", render: data =>
+    categoryChart("#chart-decade", data) }],
+  ["agree-gallery", { key: "agree", render: agreementGallery }],
+]);
+const observer = new IntersectionObserver(entries => {
+  for (const entry of entries) {
+    if (!entry.isIntersecting) continue;
+    observer.unobserve(entry.target);
+    const view = views.get(entry.target.id);
+    const library = view.key === "agree" ? Promise.resolve() :
+      (apexReady ||= loadScript("https://cdn.jsdelivr.net/npm/apexcharts@4"));
+    library.then(() => view.render(dashboardData[view.key]))
+      .catch(error => showLoadError(entry.target, error));
+  }
+}, { rootMargin: "150px" });
+loadScript("data.js").then(() => {
+  buildTable("#table-pos", "Critics like it more — top 20", RED,
+    dashboardData.tables.pos.map(index => dashboardData.movies[index]));
+  buildTable("#table-neg", "Users like it more — top 20", BLUE,
+    dashboardData.tables.neg.map(index => dashboardData.movies[index]));
+    for (const id of views.keys()) observer.observe(document.getElementById(id));
+}).catch(error => showLoadError(document.getElementById("table-pos"), error));

@@ -1,27 +1,30 @@
 #!/usr/bin/env python3
 """Build index.html: critic vs user rating discrepancy dashboard.
 
-Reads critics_over_users.csv / users_over_critics.csv and embeds a JSON
-payload into template.html.
+Reads the ranking CSVs and writes the page, renderer, and compact shared data.
 """
 import csv
 import json
+import math
 from collections import defaultdict
 from statistics import mean
+from pathlib import Path
 
 MIN_YEAR = 1980          # everything older is excluded entirely
-CONTEXT1 = 300           # grey dots on the timeline chart
-CONTEXT2 = 1200          # grey bubbles on the Metascore vs IMDb chart
+CONTEXT1 = 100           # grey dots on the timeline chart
+CONTEXT2 = 120           # grey bubbles on the Metascore vs IMDb chart
 TOP_TABLE = 20           # rows per table
-TOP2 = 10                # extremes per side on the bubble chart
+TOP2 = 15                # extremes per side on the bubble chart
 TOP_GENRE = 1            # extremes per side per genre
 TOP_DECADE = 1           # extremes per side per decade
 GENRE_COUNT = 12         # how many genres to show
 
 
-def slim(r):
-    return {"id": r["id"], "t": r["t"], "y": r["y"], "d": r["d"], "mc": r["mc"],
-            "im": r["im"], "v": r["v"], "img": r["img"], "g": r["g"]}
+def slim(r, include_votes=True):
+    movie = {key: r[key] for key in ("id", "t", "y", "d", "mc", "im", "img")}
+    if include_votes:
+        movie["v"] = r["v"]
+    return movie
 
 
 rows = []
@@ -44,8 +47,8 @@ by_pop = sorted(rows, key=lambda r: -r["v"])
 # Tables: global top N per side.
 pos_all = sorted((r for r in rows if r["d"] > 0), key=lambda r: -r["d"])
 neg_all = sorted((r for r in rows if r["d"] < 0), key=lambda r: r["d"])
-tables = {"pos": [slim(r) for r in pos_all[:TOP_TABLE]],
-          "neg": [slim(r) for r in neg_all[:TOP_TABLE]]}
+tables = {"pos": [slim(r, False) for r in pos_all[:TOP_TABLE]],
+          "neg": [slim(r, False) for r in neg_all[:TOP_TABLE]]}
 
 # Chart 1 (timeline): most extreme per side per year + popular context.
 by_year = defaultdict(list)
@@ -102,19 +105,107 @@ for d0 in range(1980, 2030, 10):
                     "neg": [slim(r) for r in n[:TOP_DECADE]]})
 
 # Agreement: most popular movies where critics and users match (|diff| <= 1).
-agree = [slim(r) for r in by_pop if abs(r["d"]) <= 1][:TOP_TABLE]
+agree = [slim(r, False) for r in by_pop if abs(r["d"]) <= 1][:TOP_TABLE]
 
-payload = {"tables": tables, "chart1": chart1, "chart2": chart2,
-           "genres": genres, "decades": decades, "agree": agree,
-           "average": mean(r["d"] for r in rows), "count": len(rows)}
+
+def movie_series(chart, x_key, y_key, bubble=False):
+    groups = [
+        ("Critics like it more", [m for m in chart["ext"] if m["d"] > 0]),
+        ("Users like it more", [m for m in chart["ext"] if m["d"] < 0]),
+        ("Popular movies", chart["ctx"]),
+    ]
+    series = []
+    highlight_floor = max(m["v"] for m in chart["ext"] + chart["ctx"]) / 4 if bubble else 0
+    for index, (name, movies) in enumerate(groups):
+        points = [{"x": m[x_key], "y": m[y_key], "meta": m} for m in movies]
+        if bubble:
+            for point in points:
+                # Highlighted bubbles stay visible; tooltips retain the true vote count.
+                point["z"] = max(point["meta"]["v"], highlight_floor) if index < 2 else point["meta"]["v"]
+        series.append({"name": name, "data": points})
+    return series
+
+
+def category_input(groups, row_height):
+    categories = groups + [{
+        "g": "Dataset overall", "average": mean(r["d"] for r in rows),
+        "count": len(rows), "pos": [], "neg": [],
+    }]
+    series = [
+        {"name": "Critics like it more", "data": []},
+        {"name": "Users like it more", "data": []},
+        {"name": "Category mean", "data": []},
+    ]
+    for index, category in enumerate(categories):
+        for side, name in enumerate(("pos", "neg")):
+            series[side]["data"].extend(
+                {"x": m["d"], "y": index, "meta": m} for m in category[name]
+            )
+        summary = {key: category[key] for key in ("g", "average", "count")}
+        series[2]["data"].append({"x": category["average"], "y": index, "meta": summary})
+    return {
+        "series": series,
+        "labels": [g["g"] for g in categories],
+        "limit": math.ceil(max(abs(p["x"]) for s in series for p in s["data"])) + 4,
+        "height": 60 + len(categories) * row_height,
+    }
+
+
+payload = {
+    "tables": tables,
+    "chart1": {
+        "series": movie_series(chart1, "d", "y"),
+        "limit": math.ceil(max(abs(m["d"]) for m in chart1["ext"] + chart1["ctx"])) + 3,
+    },
+    "chart2": {"series": movie_series(chart2, "mc", "im", bubble=True)},
+    "genres": category_input(genres, 46),
+    "decades": category_input(decades, 60),
+    "agree": agree,
+}
+
+movies = []
+movie_indexes = {}
+movie_rows = {r["id"]: r for r in rows}
+
+
+def movie_index(movie):
+    key = movie["id"]
+    if key not in movie_indexes:
+        movie_indexes[key] = len(movies)
+        movies.append(slim(movie_rows[key]))
+    return movie_indexes[key]
+
+
+def share_movies(value):
+    if isinstance(value, list):
+        return [share_movies(item) for item in value]
+    if isinstance(value, dict):
+        if "id" in value:
+            return movie_index(value)
+        if "meta" in value and "id" in value["meta"]:
+            return {**{k: v for k, v in value.items() if k != "meta"},
+                    "movie": movie_index(value["meta"])}
+        return {key: share_movies(item) for key, item in value.items()}
+    return value
+
+
+payload = share_movies(payload)
+for name, data in payload.items():
+    size = len(json.dumps(data, separators=(",", ":")).encode())
+    assert size <= 10_000, f"{name} input exceeds the 10 KB budget: {size} bytes"
+    print(f"{name} input: {size:,} bytes")
+payload["movies"] = movies
 
 print(f"{len(ext1)} timeline extremes, {len(ext2)} bubble extremes, "
       f"{len(genres)} genres, {len(decades)} decades, "
       f"{len(agree)} agreement movies")
 
-with open("template.html") as f:
-    html = f.read()
-html = html.replace("/*PAYLOAD*/", json.dumps(payload, separators=(",", ":")))
-with open("index.html", "w") as f:
-    f.write(html)
-print("wrote index.html")
+encoded = json.dumps(payload, separators=(",", ":"))
+Path("data.js").write_text(f"window.dashboardData={encoded};\n")
+
+html = Path("template.html").read_text()
+head, script = html.split("<script>\n", 1)
+javascript, tail = script.split("</script>", 1)
+Path("dashboard.js").write_text(javascript)
+Path("index.html").write_text(head + '<script src="dashboard.js" defer></script>' + tail)
+print(f"wrote index.html ({Path('index.html').stat().st_size:,} bytes), dashboard.js, and data.js")
