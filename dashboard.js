@@ -405,6 +405,7 @@ const views = new Map([
     }],
     ["agree-gallery", {key: "agree", render: agreementGallery}],
 ]);
+
 const observer = new IntersectionObserver(entries => {
     for (const entry of entries) {
         if (!entry.isIntersecting) continue;
@@ -416,6 +417,7 @@ const observer = new IntersectionObserver(entries => {
             .catch(error => showLoadError(entry.target, error));
     }
 }, {rootMargin: "150px"});
+
 document.addEventListener("DOMContentLoaded", () => {
     try {
         if (!window.dashboardData) throw new Error("Unable to load data.js");
