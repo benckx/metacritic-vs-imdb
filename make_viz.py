@@ -13,7 +13,8 @@ from pathlib import Path
 MIN_YEAR = 1980          # everything older is excluded entirely
 CONTEXT1 = 100           # grey dots on the timeline chart
 CONTEXT2 = 120           # grey bubbles on the Metascore vs IMDb chart
-TOP_TABLE = 20           # rows per table
+TOP_TABLE = 10           # rows per table
+TOP_AGREE = 20           # movies in the agreement gallery
 TOP2 = 15                # extremes per side on the bubble chart
 TOP_GENRE = 1            # extremes per side per genre
 TOP_DECADE = 1           # extremes per side per decade
@@ -105,7 +106,7 @@ for d0 in range(1980, 2030, 10):
                     "neg": [slim(r) for r in n[:TOP_DECADE]]})
 
 # Agreement: most popular movies where critics and users match (|diff| <= 1).
-agree = [slim(r, False) for r in by_pop if abs(r["d"]) <= 1][:TOP_TABLE]
+agree = [slim(r, False) for r in by_pop if abs(r["d"]) <= 1][:TOP_AGREE]
 
 
 def movie_series(chart, x_key, y_key, bubble=False):
@@ -127,10 +128,7 @@ def movie_series(chart, x_key, y_key, bubble=False):
 
 
 def category_input(groups, row_height):
-    categories = groups + [{
-        "g": "Dataset overall", "average": mean(r["d"] for r in rows),
-        "count": len(rows), "pos": [], "neg": [],
-    }]
+    categories = groups
     series = [
         {"name": "Critics like it more", "data": []},
         {"name": "Users like it more", "data": []},

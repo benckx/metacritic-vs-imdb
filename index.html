@@ -58,9 +58,9 @@
   .movie-hover-title { font-weight: 600; margin-bottom: 6px; }
   #chart1 { position: relative; }
   #chart1 { min-height: 795px; }
-  #chart2 { min-height: 655px; }
-  #chart-genre { min-height: 673px; }
-  #chart-decade { min-height: 435px; }
+  #chart2 { aspect-ratio: 1; min-height: 0; }
+  #chart-genre { min-height: 627px; }
+  #chart-decade { min-height: 375px; }
   #agree-gallery { min-height: 600px; }
   .load-error { color: var(--red); padding: 16px; }
   #chart-genre, #chart-decade { position: relative; }
@@ -87,7 +87,7 @@
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   }
   .agree-card .ac-s { font-size: 11px; color: var(--green); padding-bottom: 7px; }
-  .apexcharts-tooltip { background: #1d2430 !important; border: 1px solid var(--border) !important; }
+  .apexcharts-tooltip { background: #1d2430 !important; border: 1px solid var(--border) !important; transition: none !important; }
 </style>
 </head>
 <body>
@@ -108,15 +108,15 @@ Grey: 100 popular movies. Hover for posters.</p>
 <h2>Metascore vs IMDb score</h2>
 <p class="sub">Colored: the 15 most extreme movies per side, with a minimum bubble size for visibility.
 Grey: 120 popular movies, with bubble size following IMDb vote count.</p>
-<div class="card" style="max-width:940px"><div id="chart2"></div></div>
+<div class="card" style="max-width:752px"><div id="chart2"></div></div>
 
 <h2>Most extreme by genre</h2>
-<p class="sub">One most extreme movie per side for each genre. Arrows: mean differences, colored by direction, including the dataset overall.
+<p class="sub">One most extreme movie per side for each genre. Arrows: mean differences, colored by direction.
 Means use signed differences, with equal weight per movie since 1980.</p>
 <div class="card" style="max-width:800px"><div id="chart-genre"></div></div>
 
 <h2>Most extreme by decade</h2>
-<p class="sub">One most extreme movie per side for each decade. Arrows: mean differences, colored by direction, including the dataset overall.
+<p class="sub">One most extreme movie per side for each decade. Arrows: mean differences, colored by direction.
 Means use signed differences, with equal weight per movie since 1980.</p>
 <div class="card" style="max-width:800px"><div id="chart-decade"></div></div>
 

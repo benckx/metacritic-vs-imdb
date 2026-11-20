@@ -73,7 +73,8 @@ function bindMovieHover(element, movie, withPoster = false) {
     const scores = scoreHTML(movie);
     const html = withPoster ? `<div class="movie-hover">
       ${poster(movie) ? `<img src="${poster(movie)}" width="72" height="106" decoding="async" alt="">` : ""}
-      <div class="movie-hover-details"><div class="movie-hover-title">${movie.t} (${movie.y})</div>${scores}</div>
+      <div class="movie-hover-details"><div class="movie-hover-title">${movie.t} (${movie.y})</div>${scores}
+        <div class="score-line"><span>IMDb votes</span><strong>${movie.v.toLocaleString()}</strong></div></div>
       </div>` : scores;
     showFloatingInfo(html, x, y);
   };
@@ -105,7 +106,7 @@ function buildTable(sel, title, color, items) {
     </td>
   </tr>`).join("");
   document.querySelector(sel).innerHTML =
-    `<caption style="color:${color}">${title}</caption>
+    `<caption style="color:${color}">${title} — top ${items.length}</caption>
      <colgroup><col class="rank-column"><col class="poster-column"><col></colgroup>
      <tr><th class="num">#</th><th></th><th>Movie · hover for scores</th></tr>` + rows;
   document.querySelectorAll(`${sel} .movie-row`).forEach((row, i) => {
@@ -186,7 +187,7 @@ return new ApexCharts(document.querySelector("#chart1"), {
 // ---------- chart 2: bubbles ----------
 function bubbleChart(data) {
 return new ApexCharts(document.querySelector("#chart2"), {
-  chart: { ...baseChart, type: "bubble", height: 640 },
+  chart: { ...baseChart, type: "bubble", height: "100%", parentHeightOffset: 0 },
   theme: darkTheme,
   series: data.series,
   colors: [RED, BLUE, GREY],
@@ -256,25 +257,46 @@ function drawMeanArrows(context) {
   });
   context.el.appendChild(svg);
 }
+const categoryHoverMarkers = new WeakSet();
+function bindCategoryHover(context) {
+  drawMeanArrows(context);
+  context.el.querySelectorAll(".apexcharts-series").forEach((series, i) => {
+    if (i >= 2) return;
+    const markers = series.querySelectorAll(".apexcharts-marker");
+    context.w.config.series[i].data.forEach((point, j) => {
+      const marker = markers[j];
+      if (categoryHoverMarkers.has(marker)) return;
+      const movie = pointMeta(point);
+      bindMovieHover(marker, movie, true);
+      marker.setAttribute("tabindex", "0");
+      marker.setAttribute("role", "link");
+      marker.setAttribute("aria-label", `${movie.t} (${movie.y}) on IMDb`);
+      marker.addEventListener("keydown", event => {
+        if (event.key === "Enter") window.open(imdb(movie), "_blank", "noopener,noreferrer");
+      });
+      categoryHoverMarkers.add(marker);
+    });
+  });
+}
 function categoryChart(sel, data) {
   const labels = data.labels;
   const lim = data.limit;
   return new ApexCharts(document.querySelector(sel), {
     chart: { ...baseChart, type: "scatter", height: data.height,
-      events: { ...baseChart.events, mounted: drawMeanArrows, updated: drawMeanArrows } },
+      events: { ...baseChart.events, mounted: bindCategoryHover, updated: bindCategoryHover } },
     theme: darkTheme,
     series: data.series,
     colors: [RED, BLUE, GREY],
     markers: { size: [6, 6, 0], strokeWidth: 0, hover: { sizeOffset: 0 } },
-    xaxis: { min: -lim, max: lim, tickAmount: 10,
+    xaxis: { min: -lim, max: lim, tickAmount: 10, crosshairs: { show: false },
              title: { text: "Metascore − IMDb (%)" },
              labels: { formatter: v => (v > 0 ? "+" : "") + Math.round(v) } },
-    yaxis: { min: -1, max: labels.length,
+    yaxis: { min: -1, max: labels.length, crosshairs: { show: false },
              tickAmount: labels.length + 1,
              labels: { formatter: v => labels[Math.round(v)] ?? "" } },
     grid: { borderColor: "#232a36" },
     legend: { position: "top" },
-    tooltip: { custom: customTip, intersect: true, shared: false },
+    tooltip: { enabled: false },
     annotations: { xaxis: [{ x: 0, borderColor: "#6b7689", strokeDashArray: 0 }] },
   }).render();
 }
@@ -328,9 +350,9 @@ const observer = new IntersectionObserver(entries => {
   }
 }, { rootMargin: "150px" });
 loadScript("data.js").then(() => {
-  buildTable("#table-pos", "Critics like it more — top 20", RED,
+  buildTable("#table-pos", "Critics like it more", RED,
     dashboardData.tables.pos.map(index => dashboardData.movies[index]));
-  buildTable("#table-neg", "Users like it more — top 20", BLUE,
+  buildTable("#table-neg", "Users like it more", BLUE,
     dashboardData.tables.neg.map(index => dashboardData.movies[index]));
     for (const id of views.keys()) observer.observe(document.getElementById(id));
 }).catch(error => showLoadError(document.getElementById("table-pos"), error));

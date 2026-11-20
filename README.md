@@ -7,7 +7,7 @@ discrepancies, and renders an interactive visualization.
 
 Open `index.html` in a browser to see the result:
 
-- two tables with the 20 most extreme movies per side
+- two tables with the 10 most extreme movies per side
 - a timeline scatter (diff on x, release year on y) highlighting the most
   extreme movie per side per year, with popular movies as context
 - a Metascore vs IMDb scatter where bubble size reflects IMDb vote count
