@@ -47,34 +47,41 @@ function diffColor(d) {
   return d >= 0 ? `rgba(224,92,85,${a})` : `rgba(78,141,232,${a})`;
 }
 const scoreTooltip = document.getElementById("score-tooltip");
+let scoreWidth = 0, scoreHeight = 0;
 function positionScores(x, y) {
   const gap = 14;
+  const left = Math.max(8, Math.min(x + gap, innerWidth - scoreWidth - 8));
+  const top = Math.max(8, Math.min(y + gap, innerHeight - scoreHeight - 8));
+  scoreTooltip.style.transform = `translate3d(${left}px, ${top}px, 0)`;
+}
+function showFloatingInfo(html, x, y) {
+  scoreTooltip.innerHTML = html;
+  scoreTooltip.hidden = false;
   const box = scoreTooltip.getBoundingClientRect();
-  scoreTooltip.style.left = Math.max(8, Math.min(x + gap, innerWidth - box.width - 8)) + "px";
-  scoreTooltip.style.top = Math.max(8, Math.min(y + gap, innerHeight - box.height - 8)) + "px";
+  scoreWidth = box.width;
+  scoreHeight = box.height;
+  positionScores(x, y);
 }
 function showScores(movie, x, y) {
-  scoreTooltip.innerHTML = `<div class="score-line"><span>IMDb</span><strong>${pct(movie.im)}</strong></div>
-    <div class="score-line"><span>Metacritic</span><strong>${pct(movie.mc)}</strong></div>`;
-  scoreTooltip.hidden = false;
-  positionScores(x, y);
+  showFloatingInfo(`<div class="score-line"><span>IMDb</span><strong>${pct(movie.im)}</strong></div>
+    <div class="score-line"><span>Metacritic</span><strong>${pct(movie.mc)}</strong></div>
+    <div class="score-line"><span>Discrepancy</span><strong style="color:${movie.d >= 0 ? RED : BLUE}">${sdiff(movie.d)}</strong></div>`, x, y);
 }
 function buildTable(sel, title, color, items) {
   const rows = items.map((m, i) => `<tr class="movie-row" tabindex="0">
     <td class="num" style="color:var(--muted)">${i + 1}</td>
-    <td class="poster-cell"><a href="${imdb(m)}" target="_blank" rel="noopener noreferrer" aria-label="Open ${m.t} on IMDb">${poster(m) ? `<img src="${poster(m)}" loading="lazy" alt="">` : ""}</a></td>
-    <td><a class="movie-link" href="${imdb(m)}" target="_blank" rel="noopener noreferrer">${m.t} <span style="color:var(--muted)">(${m.y})</span></a></td>
-    <td class="diff-cell">
-      <a class="movie-link diff-track" href="${imdb(m)}" target="_blank" rel="noopener noreferrer" aria-label="Open ${m.t} on IMDb">
+    <td class="poster-cell"><a href="${imdb(m)}" target="_blank" rel="noopener noreferrer" aria-label="Open ${m.t} on IMDb">${poster(m) ? `<img src="${poster(m)}" loading="lazy" decoding="async" alt="">` : ""}</a></td>
+    <td class="movie-details">
+      <a class="movie-link" href="${imdb(m)}" target="_blank" rel="noopener noreferrer">${m.t} <span style="color:var(--muted)">(${m.y})</span></a>
+      <div class="diff-track">
         <span class="diff-fill" style="width:${Math.min(Math.abs(m.d), 100)}%;background:${diffColor(m.d)}"></span>
         <span class="diff-value">${sdiff(m.d)}</span>
-      </a>
+      </div>
     </td>
   </tr>`).join("");
   document.querySelector(sel).innerHTML =
     `<caption style="color:${color}">${title}</caption>
-     <tr><th class="num">#</th><th></th><th>Title</th>
-     <th class="num">Diff · hover for scores</th></tr>` + rows;
+     <tr><th class="num">#</th><th></th><th>Movie · hover for scores</th></tr>` + rows;
   document.querySelectorAll(`${sel} .movie-row`).forEach((row, i) => {
     row.addEventListener("pointerenter", event => {
       row.setAttribute("aria-describedby", "score-tooltip");
@@ -97,7 +104,7 @@ function buildTable(sel, title, color, items) {
       }
     });
     row.addEventListener("click", event => {
-      if (!event.target.closest("a")) {
+      if (!event.target.closest("a, .diff-track")) {
         window.open(imdb(items[i]), "_blank", "noopener,noreferrer");
       }
     });
@@ -229,13 +236,11 @@ function drawMeanArrows(context) {
     })) line.setAttribute(key, value);
     line.classList.add("mean-arrow");
     line.addEventListener("pointerenter", event => {
-      scoreTooltip.innerHTML = customTip({
+      showFloatingInfo(customTip({
         seriesIndex: 2,
         dataPointIndex: point.y,
         w: context.w,
-      });
-      scoreTooltip.hidden = false;
-      positionScores(event.clientX, event.clientY);
+      }), event.clientX, event.clientY);
     });
     line.addEventListener("pointermove", event => positionScores(event.clientX, event.clientY));
     line.addEventListener("pointerleave", () => { scoreTooltip.hidden = true; });

@@ -18,8 +18,7 @@
   .wrap { max-width: 1040px; margin: 0 auto; }
   h1 {
     font-size: 30px; text-align: center; margin: 0 0 6px;
-    background: linear-gradient(90deg, var(--blue), var(--red));
-    -webkit-background-clip: text; background-clip: text; color: transparent;
+    color: var(--text);
   }
   h2 { font-size: 20px; margin: 48px 0 4px; text-align: center; }
   p.sub { color: var(--muted); font-size: 13px; text-align: center; margin: 0 0 18px; }
@@ -33,20 +32,22 @@
   th { color: var(--muted); font-weight: 500; border-top: none; }
   td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
   td.poster-cell { padding: 3px 6px; }
-  td img { width: 60px; height: 88px; object-fit: cover; border-radius: 5px; display: block; }
+  td img { width: 72px; height: 106px; object-fit: cover; border-radius: 5px; display: block; }
   a { color: inherit; text-decoration: none; }
   a:hover { text-decoration: underline; }
   .movie-link { display: block; }
   .apexcharts-marker, .apexcharts-datalabel { cursor: pointer; }
-  .diff-cell { width: 40%; }
-  .diff-track { position: relative; height: 32px; background: #232a36; border-radius: 5px; overflow: hidden; }
+  .movie-details { padding: 14px 12px; }
+  .movie-details > .movie-link:first-child { font-weight: 600; line-height: 1.5; }
+  .diff-track { position: relative; height: 32px; background: #232a36; border-radius: 5px; overflow: hidden; cursor: default; }
+  .movie-details .diff-track { margin-top: 12px; }
   .diff-fill { position: absolute; inset: 0 auto 0 0; border-radius: 5px; }
   .diff-value { position: relative; display: block; padding: 7px 10px; text-align: right; font-weight: 600; }
-  .movie-row { cursor: pointer; }
+  .movie-row { cursor: pointer; height: 130px; }
   .movie-row:hover, .movie-row:focus-within { background: #1d2430; }
-  #score-tooltip { position: fixed; z-index: 1000; pointer-events: none; min-width: 190px;
+  #score-tooltip { position: fixed; left: 0; top: 0; z-index: 1000; pointer-events: none; min-width: 190px;
     padding: 12px 16px; border: 1px solid #465268; border-radius: 10px; background: #202938;
-    box-shadow: 0 8px 24px #0008; font-size: 13px; }
+    box-shadow: 0 8px 24px #0008; font-size: 13px; will-change: transform; contain: layout; }
   .score-line { display: flex; justify-content: space-between; gap: 24px; padding: 3px 0; }
   .score-line span { color: var(--muted); }
   #chart1 { position: relative; }
@@ -106,12 +107,12 @@ Grey: 120 popular movies, with bubble size following IMDb vote count.</p>
 <h2>Most extreme by genre</h2>
 <p class="sub">One most extreme movie per side for each genre. Arrows: mean differences, colored by direction, including the dataset overall.
 Means use signed differences, with equal weight per movie since 1980.</p>
-<div class="card" style="max-width:900px"><div id="chart-genre"></div></div>
+<div class="card" style="max-width:800px"><div id="chart-genre"></div></div>
 
 <h2>Most extreme by decade</h2>
 <p class="sub">One most extreme movie per side for each decade. Arrows: mean differences, colored by direction, including the dataset overall.
 Means use signed differences, with equal weight per movie since 1980.</p>
-<div class="card" style="max-width:900px"><div id="chart-decade"></div></div>
+<div class="card" style="max-width:800px"><div id="chart-decade"></div></div>
 
 <h2>Where everyone agrees</h2>
 <p class="sub">The most popular movies where critics and users give (almost) the same score.</p>
@@ -169,34 +170,41 @@ function diffColor(d) {
   return d >= 0 ? `rgba(224,92,85,${a})` : `rgba(78,141,232,${a})`;
 }
 const scoreTooltip = document.getElementById("score-tooltip");
+let scoreWidth = 0, scoreHeight = 0;
 function positionScores(x, y) {
   const gap = 14;
+  const left = Math.max(8, Math.min(x + gap, innerWidth - scoreWidth - 8));
+  const top = Math.max(8, Math.min(y + gap, innerHeight - scoreHeight - 8));
+  scoreTooltip.style.transform = `translate3d(${left}px, ${top}px, 0)`;
+}
+function showFloatingInfo(html, x, y) {
+  scoreTooltip.innerHTML = html;
+  scoreTooltip.hidden = false;
   const box = scoreTooltip.getBoundingClientRect();
-  scoreTooltip.style.left = Math.max(8, Math.min(x + gap, innerWidth - box.width - 8)) + "px";
-  scoreTooltip.style.top = Math.max(8, Math.min(y + gap, innerHeight - box.height - 8)) + "px";
+  scoreWidth = box.width;
+  scoreHeight = box.height;
+  positionScores(x, y);
 }
 function showScores(movie, x, y) {
-  scoreTooltip.innerHTML = `<div class="score-line"><span>IMDb</span><strong>${pct(movie.im)}</strong></div>
-    <div class="score-line"><span>Metacritic</span><strong>${pct(movie.mc)}</strong></div>`;
-  scoreTooltip.hidden = false;
-  positionScores(x, y);
+  showFloatingInfo(`<div class="score-line"><span>IMDb</span><strong>${pct(movie.im)}</strong></div>
+    <div class="score-line"><span>Metacritic</span><strong>${pct(movie.mc)}</strong></div>
+    <div class="score-line"><span>Discrepancy</span><strong style="color:${movie.d >= 0 ? RED : BLUE}">${sdiff(movie.d)}</strong></div>`, x, y);
 }
 function buildTable(sel, title, color, items) {
   const rows = items.map((m, i) => `<tr class="movie-row" tabindex="0">
     <td class="num" style="color:var(--muted)">${i + 1}</td>
-    <td class="poster-cell"><a href="${imdb(m)}" target="_blank" rel="noopener noreferrer" aria-label="Open ${m.t} on IMDb">${poster(m) ? `<img src="${poster(m)}" loading="lazy" alt="">` : ""}</a></td>
-    <td><a class="movie-link" href="${imdb(m)}" target="_blank" rel="noopener noreferrer">${m.t} <span style="color:var(--muted)">(${m.y})</span></a></td>
-    <td class="diff-cell">
-      <a class="movie-link diff-track" href="${imdb(m)}" target="_blank" rel="noopener noreferrer" aria-label="Open ${m.t} on IMDb">
+    <td class="poster-cell"><a href="${imdb(m)}" target="_blank" rel="noopener noreferrer" aria-label="Open ${m.t} on IMDb">${poster(m) ? `<img src="${poster(m)}" loading="lazy" decoding="async" alt="">` : ""}</a></td>
+    <td class="movie-details">
+      <a class="movie-link" href="${imdb(m)}" target="_blank" rel="noopener noreferrer">${m.t} <span style="color:var(--muted)">(${m.y})</span></a>
+      <div class="diff-track">
         <span class="diff-fill" style="width:${Math.min(Math.abs(m.d), 100)}%;background:${diffColor(m.d)}"></span>
         <span class="diff-value">${sdiff(m.d)}</span>
-      </a>
+      </div>
     </td>
   </tr>`).join("");
   document.querySelector(sel).innerHTML =
     `<caption style="color:${color}">${title}</caption>
-     <tr><th class="num">#</th><th></th><th>Title</th>
-     <th class="num">Diff · hover for scores</th></tr>` + rows;
+     <tr><th class="num">#</th><th></th><th>Movie · hover for scores</th></tr>` + rows;
   document.querySelectorAll(`${sel} .movie-row`).forEach((row, i) => {
     row.addEventListener("pointerenter", event => {
       row.setAttribute("aria-describedby", "score-tooltip");
@@ -219,7 +227,7 @@ function buildTable(sel, title, color, items) {
       }
     });
     row.addEventListener("click", event => {
-      if (!event.target.closest("a")) {
+      if (!event.target.closest("a, .diff-track")) {
         window.open(imdb(items[i]), "_blank", "noopener,noreferrer");
       }
     });
@@ -351,13 +359,11 @@ function drawMeanArrows(context) {
     })) line.setAttribute(key, value);
     line.classList.add("mean-arrow");
     line.addEventListener("pointerenter", event => {
-      scoreTooltip.innerHTML = customTip({
+      showFloatingInfo(customTip({
         seriesIndex: 2,
         dataPointIndex: point.y,
         w: context.w,
-      });
-      scoreTooltip.hidden = false;
-      positionScores(event.clientX, event.clientY);
+      }), event.clientX, event.clientY);
     });
     line.addEventListener("pointermove", event => positionScores(event.clientX, event.clientY));
     line.addEventListener("pointerleave", () => { scoreTooltip.hidden = true; });
