@@ -82,6 +82,7 @@ a:hover { text-decoration: underline; }
 .apex-tip .ts { color: #aab3c2; font-size: 12px; line-height: 1.5; }
 #agree-gallery {
   display: flex; flex-wrap: wrap; gap: 14px; justify-content: center;
+  max-width: 910px; margin: 0 auto;
 }
 .agree-card {
   width: 118px; background: var(--card); border: 1px solid var(--border);
