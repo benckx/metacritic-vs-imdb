@@ -12,7 +12,7 @@ Open `index.html` in a browser to see the result:
   extreme movie per side per year, with popular movies as context
 - a Metascore vs IMDb scatter where bubble size reflects IMDb vote count
 
-Keep `dashboard.js` and `data.js` beside `index.html`.
+Keep `styles.css`, `dashboard.js`, and `data.js` beside `index.html`.
 `make_viz.py` precomputes each visualization's selected points, coordinates,
 averages, and axis limits. Each view's input must stay below 10 KB; movie
 details are stored once in a shared lookup. Charts render only when they
@@ -58,5 +58,6 @@ Only the first two pipeline steps hit the network; `compare.py` and
 | `make_viz.py` | precompute compact chart inputs and build the page |
 | `template.html` | dashboard markup and ApexCharts rendering code |
 | `index.html` | generated dashboard shell |
+| `styles.css` | dashboard styles |
 | `dashboard.js` | generated renderer and lazy-loading code |
 | `data.js` | generated, precomputed inputs and shared movie details; supports direct `file://` viewing |

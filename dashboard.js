@@ -95,10 +95,10 @@ function bindMovieHover(element, movie, withPoster = false) {
 }
 function buildTable(sel, title, color, items) {
   const rows = items.map((m, i) => `<tr class="movie-row" tabindex="0">
-    <td class="num" style="color:var(--muted)">${i + 1}</td>
+    <td class="num muted">${i + 1}</td>
     <td class="poster-cell"><a href="${imdb(m)}" target="_blank" rel="noopener noreferrer" aria-label="Open ${m.t} on IMDb">${poster(m) ? `<img src="${poster(m)}" loading="lazy" decoding="async" alt="">` : ""}</a></td>
     <td class="movie-details">
-      <a class="movie-link" href="${imdb(m)}" target="_blank" rel="noopener noreferrer">${m.t} <span style="color:var(--muted)">(${m.y})</span></a>
+      <a class="movie-link" href="${imdb(m)}" target="_blank" rel="noopener noreferrer">${m.t} <span class="muted">(${m.y})</span></a>
       <div class="diff-track">
         <span class="diff-fill" style="width:${Math.min(Math.abs(m.d), 100)}%;background:${diffColor(m.d)}"></span>
         <span class="diff-value">${sdiff(m.d)}</span>

@@ -3,92 +3,7 @@
 <head>
 <meta charset="utf-8">
 <title>Critics vs IMDb users — rating discrepancy</title>
-<style>
-  :root {
-    --bg: #0e1117; --card: #161b24; --border: #232a36;
-    --text: #dde3ec; --muted: #8b94a5;
-    --red: #e05c55; --blue: #4e8de8; --green: #4caf7d;
-  }
-  * { box-sizing: border-box; }
-  body {
-    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
-    background: var(--bg); color: var(--text);
-    margin: 0; padding: 40px 16px 80px;
-  }
-  .wrap { max-width: 1040px; margin: 0 auto; }
-  h1 {
-    font-size: 30px; text-align: center; margin: 0 0 6px;
-    color: var(--text);
-  }
-  h2 { font-size: 20px; margin: 48px 0 4px; text-align: center; }
-  p.sub { color: var(--muted); font-size: 13px; text-align: center; margin: 0 0 18px; }
-  .card {
-    background: var(--card); border: 1px solid var(--border);
-    border-radius: 12px; padding: 18px; margin: 0 auto 28px;
-  }
-  table { border-collapse: collapse; font-size: 13px; width: 100%; table-layout: fixed; }
-  .rank-column { width: 44px; }
-  .poster-column { width: 92px; }
-  caption { font-weight: 600; font-size: 15px; padding: 4px 0 12px; text-align: left; }
-  th, td { padding: 5px 10px; text-align: left; border-top: 1px solid var(--border); }
-  th { color: var(--muted); font-weight: 500; border-top: none; }
-  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
-  td.poster-cell { padding: 3px 6px; }
-  td img { width: 72px; height: 106px; object-fit: cover; border-radius: 5px; display: block; }
-  a { color: inherit; text-decoration: none; }
-  a:hover { text-decoration: underline; }
-  .movie-link { display: block; }
-  .apexcharts-marker, .apexcharts-datalabel { cursor: pointer; }
-  .movie-details { padding: 14px 12px; }
-  .movie-details > .movie-link:first-child { font-weight: 600; line-height: 1.5; }
-  .diff-track { position: relative; height: 32px; background: #232a36; border-radius: 5px; overflow: hidden; cursor: default; }
-  .movie-details .diff-track { margin-top: 12px; }
-  .diff-fill { position: absolute; inset: 0 auto 0 0; border-radius: 5px; }
-  .diff-value { position: relative; display: block; padding: 7px 10px; text-align: right; font-weight: 600; }
-  .movie-row { cursor: pointer; height: 130px; }
-  .movie-row:hover, .movie-row:focus-within { background: #1d2430; }
-  #score-tooltip { position: fixed; left: 0; top: 0; z-index: 1000; pointer-events: none; min-width: 190px;
-    padding: 12px 16px; border: 1px solid #465268; border-radius: 10px; background: #202938;
-    box-shadow: 0 8px 24px #0008; font-size: 13px; will-change: transform; contain: layout; }
-  .score-line { display: flex; justify-content: space-between; gap: 24px; padding: 3px 0; }
-  .score-line span { color: var(--muted); }
-  .movie-hover { display: flex; gap: 12px; align-items: center; max-width: 340px; }
-  .movie-hover img { width: 72px; height: 106px; object-fit: cover; border-radius: 5px; flex-shrink: 0; }
-  .movie-hover-details { min-width: 190px; }
-  .movie-hover-title { font-weight: 600; margin-bottom: 6px; }
-  #chart1 { position: relative; }
-  #chart1 { min-height: 795px; }
-  #chart2 { aspect-ratio: 1; min-height: 0; }
-  #chart-genre { min-height: 627px; }
-  #chart-decade { min-height: 375px; }
-  #agree-gallery { min-height: 600px; }
-  .load-error { color: var(--red); padding: 16px; }
-  #chart-genre, #chart-decade { position: relative; }
-  .mean-arrows { position: absolute; inset: 0; pointer-events: none; }
-  .mean-arrow { pointer-events: stroke; }
-  .timeline-titles { position: absolute; inset: 0; pointer-events: none; }
-  .timeline-title { position: absolute; pointer-events: auto; font-size: 10px; line-height: 14px;
-    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .timeline-title.left { text-align: right; }
-  .apex-tip { display: flex; gap: 10px; padding: 10px; max-width: 300px; align-items: flex-start; }
-  .apex-tip img { width: 62px; height: 92px; object-fit: cover; border-radius: 4px; }
-  .apex-tip .tt { font-weight: 600; margin-bottom: 4px; }
-  .apex-tip .ts { color: #aab3c2; font-size: 12px; line-height: 1.5; }
-  #agree-gallery {
-    display: flex; flex-wrap: wrap; gap: 14px; justify-content: center;
-  }
-  .agree-card {
-    width: 118px; background: var(--card); border: 1px solid var(--border);
-    border-radius: 10px; overflow: hidden; text-align: center;
-  }
-  .agree-card img { width: 118px; height: 174px; object-fit: cover; display: block; }
-  .agree-card .ac-t {
-    font-size: 11px; font-weight: 600; padding: 6px 6px 2px;
-    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-  }
-  .agree-card .ac-s { font-size: 11px; color: var(--green); padding-bottom: 7px; }
-  .apexcharts-tooltip { background: #1d2430 !important; border: 1px solid var(--border) !important; transition: none !important; }
-</style>
+<link rel="stylesheet" href="styles.css">
 </head>
 <body>
 <div class="wrap">
@@ -97,28 +12,28 @@
 <p class="sub">Where Metacritic critics and IMDb users disagree the most.
 All scores in percent; diff = Metascore − IMDb. Movies since 1980.</p>
 
-<div class="card" style="max-width:860px"><table id="table-pos"></table></div>
-<div class="card" style="max-width:860px"><table id="table-neg"></table></div>
+<div class="card ranking-card"><table id="table-pos"></table></div>
+<div class="card ranking-card"><table id="table-neg"></table></div>
 
 <h2>Timeline of disagreement</h2>
 <p class="sub">Most extreme movie per side per year. Right: critics like it more; left: users like it more.
 Grey: 100 popular movies. Hover for posters.</p>
-<div class="card" style="max-width:900px"><div id="chart1"></div></div>
+<div class="card timeline-card"><div id="chart1"></div></div>
 
 <h2>Metascore vs IMDb score</h2>
 <p class="sub">Colored: the 15 most extreme movies per side, with a minimum bubble size for visibility.
 Grey: 120 popular movies, with bubble size following IMDb vote count.</p>
-<div class="card" style="max-width:752px"><div id="chart2"></div></div>
+<div class="card bubble-card"><div id="chart2"></div></div>
 
 <h2>Most extreme by genre</h2>
 <p class="sub">One most extreme movie per side for each genre. Arrows: mean differences, colored by direction.
 Means use signed differences, with equal weight per movie since 1980.</p>
-<div class="card" style="max-width:800px"><div id="chart-genre"></div></div>
+<div class="card category-card"><div id="chart-genre"></div></div>
 
 <h2>Most extreme by decade</h2>
 <p class="sub">One most extreme movie per side for each decade. Arrows: mean differences, colored by direction.
 Means use signed differences, with equal weight per movie since 1980.</p>
-<div class="card" style="max-width:800px"><div id="chart-decade"></div></div>
+<div class="card category-card"><div id="chart-decade"></div></div>
 
 <h2>Where everyone agrees</h2>
 <p class="sub">The most popular movies where critics and users give (almost) the same score.</p>
