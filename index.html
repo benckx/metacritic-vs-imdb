@@ -4,6 +4,8 @@
 <meta charset="utf-8">
 <title>Critics vs IMDb users — rating discrepancy</title>
 <link rel="stylesheet" href="styles.css">
+<script src="data.js" defer></script>
+<script src="dashboard.js" defer></script>
 </head>
 <body>
 <div class="wrap">
@@ -21,17 +23,17 @@ Grey: 100 popular movies. Hover for posters.</p>
 <div class="card timeline-card"><div id="chart1"></div></div>
 
 <h2>Metascore vs IMDb score</h2>
-<p class="sub">Colored: the 25 most extreme movies per side. Grey: 500 popular movies.
+<p class="sub">Colored: the 50 most extreme movies per side. Grey: 1,000 popular movies.
 Bubble area follows IMDb vote count, with a minimum size for visibility.</p>
 <div class="card bubble-card"><div id="chart2"></div></div>
 
 <h2>Most extreme by genre</h2>
-<p class="sub">One most extreme movie per side for each genre. Arrows: mean differences, colored by direction.
+<p class="sub">One most extreme movie per side for each genre. Arrows: mean differences, longest first, colored by direction.
 Means use signed differences, with equal weight per movie since 1980.</p>
 <div class="card category-card"><div id="chart-genre"></div></div>
 
-<h2>Most extreme by decade</h2>
-<p class="sub">One most extreme movie per side for each decade. Arrows: mean differences, colored by direction.
+<h2>Most extreme by five-year period</h2>
+<p class="sub">One most extreme movie per side for each five-year period. Arrows: mean differences, colored by direction.
 Means use signed differences, with equal weight per movie since 1980.</p>
 <div class="card category-card"><div id="chart-decade"></div></div>
 
@@ -41,6 +43,5 @@ Means use signed differences, with equal weight per movie since 1980.</p>
 
 </div>
 <div id="score-tooltip" role="tooltip" hidden></div>
-<script src="dashboard.js" defer></script>
 </body>
 </html>

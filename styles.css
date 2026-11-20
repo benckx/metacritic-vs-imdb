@@ -66,7 +66,7 @@ a:hover { text-decoration: underline; }
 #chart1 { min-height: 795px; }
 #chart2 { aspect-ratio: 1; min-height: 0; }
 #chart-genre { min-height: 627px; }
-#chart-decade { min-height: 375px; }
+#chart-decade { min-height: 675px; }
 #agree-gallery { min-height: 600px; }
 .load-error { color: var(--red); padding: 16px; }
 #chart-genre, #chart-decade { position: relative; }

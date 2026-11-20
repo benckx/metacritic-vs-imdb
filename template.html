@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <title>Critics vs IMDb users — rating discrepancy</title>
 <link rel="stylesheet" href="styles.css">
+<script src="data.js" defer></script>
 </head>
 <body>
 <div class="wrap">
@@ -21,17 +22,17 @@ Grey: 100 popular movies. Hover for posters.</p>
 <div class="card timeline-card"><div id="chart1"></div></div>
 
 <h2>Metascore vs IMDb score</h2>
-<p class="sub">Colored: the 25 most extreme movies per side. Grey: 500 popular movies.
+<p class="sub">Colored: the 50 most extreme movies per side. Grey: 1,000 popular movies.
 Bubble area follows IMDb vote count, with a minimum size for visibility.</p>
 <div class="card bubble-card"><div id="chart2"></div></div>
 
 <h2>Most extreme by genre</h2>
-<p class="sub">One most extreme movie per side for each genre. Arrows: mean differences, colored by direction.
+<p class="sub">One most extreme movie per side for each genre. Arrows: mean differences, longest first, colored by direction.
 Means use signed differences, with equal weight per movie since 1980.</p>
 <div class="card category-card"><div id="chart-genre"></div></div>
 
-<h2>Most extreme by decade</h2>
-<p class="sub">One most extreme movie per side for each decade. Arrows: mean differences, colored by direction.
+<h2>Most extreme by five-year period</h2>
+<p class="sub">One most extreme movie per side for each five-year period. Arrows: mean differences, colored by direction.
 Means use signed differences, with equal weight per movie since 1980.</p>
 <div class="card category-card"><div id="chart-decade"></div></div>
 
@@ -42,8 +43,6 @@ Means use signed differences, with equal weight per movie since 1980.</p>
 </div>
 <div id="score-tooltip" role="tooltip" hidden></div>
 <script>
-window.dashboardData = {};
-
 const RED = "#e05c55", BLUE = "#4e8de8", GREY = "#555e6e";
 const poster = m => m.img;
 const imdb = m => `https://www.imdb.com/title/${m.id}/`;
@@ -141,7 +140,7 @@ function buildTable(sel, title, color, items) {
   table.innerHTML =
     `<caption style="color:${color}"></caption>
      <colgroup><col class="rank-column"><col class="poster-column"><col></colgroup>
-     <tbody><tr><th class="num">#</th><th></th><th>Movie · hover for scores</th></tr></tbody>`;
+     <tbody></tbody>`;
   const button = document.createElement("button");
   button.type = "button";
   button.className = "view-more";
@@ -387,7 +386,6 @@ document.getElementById("agree-gallery").innerHTML = data.map(index => dashboard
   </a>`).join("");
 }
 
-// A script data file keeps direct file:// viewing possible without fetch/CORS.
 function loadScript(src) {
   return new Promise((resolve, reject) => {
     const script = document.createElement("script");
@@ -425,13 +423,18 @@ const observer = new IntersectionObserver(entries => {
       .catch(error => showLoadError(entry.target, error));
   }
 }, { rootMargin: "150px" });
-loadScript("data.js").then(() => {
-  buildTable("#table-pos", "Critics like it more", RED,
-    dashboardData.tables.pos.map(index => dashboardData.movies[index]));
-  buildTable("#table-neg", "Users like it more", BLUE,
-    dashboardData.tables.neg.map(index => dashboardData.movies[index]));
+document.addEventListener("DOMContentLoaded", () => {
+  try {
+    if (!window.dashboardData) throw new Error("Unable to load data.js");
+    buildTable("#table-pos", "Critics like it more", RED,
+      dashboardData.tables.pos.map(index => dashboardData.movies[index]));
+    buildTable("#table-neg", "Users like it more", BLUE,
+      dashboardData.tables.neg.map(index => dashboardData.movies[index]));
     for (const id of views.keys()) observer.observe(document.getElementById(id));
-}).catch(error => showLoadError(document.getElementById("table-pos"), error));
+  } catch (error) {
+    showLoadError(document.getElementById("table-pos"), error);
+  }
+});
 </script>
 </body>
 </html>

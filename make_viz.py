@@ -17,12 +17,12 @@ from PIL import Image
 
 MIN_YEAR = 1980          # everything older is excluded entirely
 CONTEXT1 = 100           # grey dots on the timeline chart
-CONTEXT2 = 500           # grey bubbles on the Metascore vs IMDb chart
+CONTEXT2 = 1000          # grey bubbles on the Metascore vs IMDb chart
 TOP_TABLE = 50           # movies available per table
 TOP_AGREE = 49           # movies in the agreement gallery
-TOP2 = 25                # extremes per side on the bubble chart
+TOP2 = 50                # extremes per side on the bubble chart
 TOP_GENRE = 1            # extremes per side per genre
-TOP_DECADE = 1           # extremes per side per decade
+TOP_PERIOD = 1           # extremes per side per five-year period
 GENRE_COUNT = 12         # how many genres to show
 POSTER_DIR = Path("posters")
 POSTER_SIZE = (236, 348)  # 2x the largest display size (gallery cards)
@@ -98,20 +98,23 @@ for g in top_genres:
                    "count": len(items),
                    "pos": [slim(r) for r in p[:TOP_GENRE]],
                    "neg": [slim(r) for r in n[:TOP_GENRE]]})
+genres.sort(key=lambda group: abs(group["average"]))
 
-# By decade: most extreme per side, 1980s .. 2020s.
-decades = []
-for d0 in range(1980, 2030, 10):
-    items = [r for r in rows if d0 <= r["y"] < d0 + 10]
+# By period: most extreme per side in five-year slices.
+periods = []
+latest_year = max(r["y"] for r in rows)
+for start in range(1980, latest_year + 1, 5):
+    items = [r for r in rows if start <= r["y"] < start + 5]
     if not items:
         continue
     p = sorted((r for r in items if r["d"] > 0), key=lambda r: -r["d"])
     n = sorted((r for r in items if r["d"] < 0), key=lambda r: r["d"])
-    decades.append({"g": f"{d0}s",
+    end = min(start + 4, latest_year)
+    periods.append({"g": f"{start}-{end}" if start != end else str(start),
                     "average": mean(r["d"] for r in items),
                     "count": len(items),
-                    "pos": [slim(r) for r in p[:TOP_DECADE]],
-                    "neg": [slim(r) for r in n[:TOP_DECADE]]})
+                    "pos": [slim(r) for r in p[:TOP_PERIOD]],
+                    "neg": [slim(r) for r in n[:TOP_PERIOD]]})
 
 # Agreement: most popular movies where critics and users match (|diff| <= 1).
 agree = [slim(r, False) for r in by_pop if abs(r["d"]) <= 1][:TOP_AGREE]
@@ -160,7 +163,7 @@ payload = {
                "neg": [m for m in chart2["ext"] if m["d"] < 0],
                "ctx": chart2["ctx"]},
     "genres": category_input(genres, 46),
-    "decades": category_input(decades, 60),
+    "decades": category_input(periods, 60),
     "agree": agree,
 }
 
@@ -222,7 +225,7 @@ with ThreadPoolExecutor(8) as pool:
 payload["movies"] = movies
 
 print(f"{len(ext1)} timeline extremes, {len(ext2)} bubble extremes, "
-      f"{len(genres)} genres, {len(decades)} decades, "
+      f"{len(genres)} genres, {len(periods)} five-year periods, "
       f"{len(agree)} agreement movies")
 
 encoded = json.dumps(payload, separators=(",", ":"))
@@ -232,5 +235,6 @@ html = Path("template.html").read_text()
 head, script = html.split("<script>\n", 1)
 javascript, tail = script.split("</script>", 1)
 Path("dashboard.js").write_text(javascript)
-Path("index.html").write_text(head + '<script src="dashboard.js" defer></script>' + tail)
+head = head.replace("</head>", '<script src="dashboard.js" defer></script>\n</head>', 1)
+Path("index.html").write_text(head + tail.removeprefix("\n"))
 print(f"wrote index.html ({Path('index.html').stat().st_size:,} bytes), dashboard.js, and data.js")
