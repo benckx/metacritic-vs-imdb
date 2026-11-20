@@ -107,7 +107,7 @@ def main():
             w.writerows(items)
         print(f"{len(items)} rows written to {path}", file=sys.stderr)
 
-    dump("critics_over_users.csv", [r for r in rows if r[0] > 0])
+    dump("critics_over_users.csv", [r for r in rows if r[0] >= 0])
     dump("users_over_critics.csv",
          [r for r in reversed(rows) if r[0] < 0])
 
