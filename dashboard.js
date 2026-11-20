@@ -62,10 +62,35 @@ function showFloatingInfo(html, x, y) {
   scoreHeight = box.height;
   positionScores(x, y);
 }
-function showScores(movie, x, y) {
-  showFloatingInfo(`<div class="score-line"><span>IMDb</span><strong>${pct(movie.im)}</strong></div>
+function scoreHTML(movie) {
+  return `<div class="score-line"><span>IMDb</span><strong>${pct(movie.im)}</strong></div>
     <div class="score-line"><span>Metacritic</span><strong>${pct(movie.mc)}</strong></div>
-    <div class="score-line"><span>Discrepancy</span><strong style="color:${movie.d >= 0 ? RED : BLUE}">${sdiff(movie.d)}</strong></div>`, x, y);
+    <div class="score-line"><span>Discrepancy</span><strong style="color:${movie.d >= 0 ? RED : BLUE}">${sdiff(movie.d)}</strong></div>`;
+}
+function bindMovieHover(element, movie, withPoster = false) {
+  const show = (x, y) => {
+    element.setAttribute("aria-describedby", "score-tooltip");
+    const scores = scoreHTML(movie);
+    const html = withPoster ? `<div class="movie-hover">
+      ${poster(movie) ? `<img src="${poster(movie)}" width="72" height="106" decoding="async" alt="">` : ""}
+      <div class="movie-hover-details"><div class="movie-hover-title">${movie.t} (${movie.y})</div>${scores}</div>
+      </div>` : scores;
+    showFloatingInfo(html, x, y);
+  };
+  const hide = () => {
+    scoreTooltip.hidden = true;
+    element.removeAttribute("aria-describedby");
+  };
+  element.addEventListener("pointerenter", event => show(event.clientX, event.clientY));
+  element.addEventListener("pointermove", event => positionScores(event.clientX, event.clientY));
+  element.addEventListener("pointerleave", hide);
+  element.addEventListener("focusin", () => {
+    const box = (element.querySelector(".diff-track") || element).getBoundingClientRect();
+    show(box.left, box.top);
+  });
+  element.addEventListener("focusout", event => {
+    if (!element.contains(event.relatedTarget)) hide();
+  });
 }
 function buildTable(sel, title, color, items) {
   const rows = items.map((m, i) => `<tr class="movie-row" tabindex="0">
@@ -81,28 +106,10 @@ function buildTable(sel, title, color, items) {
   </tr>`).join("");
   document.querySelector(sel).innerHTML =
     `<caption style="color:${color}">${title}</caption>
+     <colgroup><col class="rank-column"><col class="poster-column"><col></colgroup>
      <tr><th class="num">#</th><th></th><th>Movie · hover for scores</th></tr>` + rows;
   document.querySelectorAll(`${sel} .movie-row`).forEach((row, i) => {
-    row.addEventListener("pointerenter", event => {
-      row.setAttribute("aria-describedby", "score-tooltip");
-      showScores(items[i], event.clientX, event.clientY);
-    });
-    row.addEventListener("pointermove", event => positionScores(event.clientX, event.clientY));
-    row.addEventListener("pointerleave", () => {
-      scoreTooltip.hidden = true;
-      row.removeAttribute("aria-describedby");
-    });
-    row.addEventListener("focusin", () => {
-      const box = row.querySelector(".diff-track").getBoundingClientRect();
-      row.setAttribute("aria-describedby", "score-tooltip");
-      showScores(items[i], box.left, box.top);
-    });
-    row.addEventListener("focusout", event => {
-      if (!row.contains(event.relatedTarget)) {
-        scoreTooltip.hidden = true;
-        row.removeAttribute("aria-describedby");
-      }
-    });
+    bindMovieHover(row, items[i]);
     row.addEventListener("click", event => {
       if (!event.target.closest("a, .diff-track")) {
         window.open(imdb(items[i]), "_blank", "noopener,noreferrer");
@@ -123,6 +130,7 @@ function alignTimelineTitles(context) {
     titles.className = "timeline-titles";
     context.el.appendChild(titles);
   }
+  if (titles.querySelector('[aria-describedby="score-tooltip"]')) scoreTooltip.hidden = true;
   titles.replaceChildren();
   const { translateX, translateY, gridWidth, gridHeight } = context.w.globals;
   const axis = context.w.config.yaxis[0];
@@ -138,10 +146,10 @@ function alignTimelineTitles(context) {
       label.target = "_blank";
       label.rel = "noopener noreferrer";
       label.textContent = movie.t;
-      label.title = `${movie.t} (${movie.y})`;
       label.style.left = (left ? 0 : right) + "px";
       label.style.width = Math.max(0, left ? translateX - 36 : width - right) + "px";
       label.style.top = (translateY + gridHeight * (axis.max - movie.y) / (axis.max - axis.min) - 7) + "px";
+      bindMovieHover(label, movie, true);
       titles.appendChild(label);
     });
   });

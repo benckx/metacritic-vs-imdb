@@ -26,7 +26,9 @@
     background: var(--card); border: 1px solid var(--border);
     border-radius: 12px; padding: 18px; margin: 0 auto 28px;
   }
-  table { border-collapse: collapse; font-size: 13px; width: 100%; }
+  table { border-collapse: collapse; font-size: 13px; width: 100%; table-layout: fixed; }
+  .rank-column { width: 44px; }
+  .poster-column { width: 92px; }
   caption { font-weight: 600; font-size: 15px; padding: 4px 0 12px; text-align: left; }
   th, td { padding: 5px 10px; text-align: left; border-top: 1px solid var(--border); }
   th { color: var(--muted); font-weight: 500; border-top: none; }
@@ -50,6 +52,10 @@
     box-shadow: 0 8px 24px #0008; font-size: 13px; will-change: transform; contain: layout; }
   .score-line { display: flex; justify-content: space-between; gap: 24px; padding: 3px 0; }
   .score-line span { color: var(--muted); }
+  .movie-hover { display: flex; gap: 12px; align-items: center; max-width: 340px; }
+  .movie-hover img { width: 72px; height: 106px; object-fit: cover; border-radius: 5px; flex-shrink: 0; }
+  .movie-hover-details { min-width: 190px; }
+  .movie-hover-title { font-weight: 600; margin-bottom: 6px; }
   #chart1 { position: relative; }
   #chart1 { min-height: 795px; }
   #chart2 { min-height: 655px; }
