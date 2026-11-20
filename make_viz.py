@@ -18,7 +18,7 @@ from PIL import Image
 MIN_YEAR = 1980          # everything older is excluded entirely
 CONTEXT1 = 100           # grey dots on the timeline chart
 CONTEXT2 = 120           # grey bubbles on the Metascore vs IMDb chart
-TOP_TABLE = 10           # rows per table
+TOP_TABLE = 40           # movies available per table
 TOP_AGREE = 20           # movies in the agreement gallery
 TOP2 = 15                # extremes per side on the bubble chart
 TOP_GENRE = 1            # extremes per side per genre

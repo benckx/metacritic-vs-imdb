@@ -93,8 +93,23 @@ function bindMovieHover(element, movie, withPoster = false) {
   });
 }
 function buildTable(sel, title, color, items) {
-  const rows = items.map((m, i) => `<tr class="movie-row" tabindex="0">
-    <td class="num muted">${i + 1}</td>
+  const table = document.querySelector(sel);
+  table.innerHTML =
+    `<caption style="color:${color}"></caption>
+     <colgroup><col class="rank-column"><col class="poster-column"><col></colgroup>
+     <tbody><tr><th class="num">#</th><th></th><th>Movie · hover for scores</th></tr></tbody>`;
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "view-more";
+  button.textContent = "View more";
+  button.setAttribute("aria-label", `View more: ${title}`);
+  table.after(button);
+  let visible = 0;
+  function showMore() {
+    const start = visible;
+    visible = Math.min(visible + 10, items.length);
+    const rows = items.slice(start, visible).map((m, i) => `<tr class="movie-row" tabindex="0">
+    <td class="num muted">${start + i + 1}</td>
     <td class="poster-cell"><a href="${imdb(m)}" target="_blank" rel="noopener noreferrer" aria-label="Open ${m.t} on IMDb">${poster(m) ? `<img src="${poster(m)}" loading="lazy" decoding="async" alt="">` : ""}</a></td>
     <td class="movie-details">
       <a class="movie-link" href="${imdb(m)}" target="_blank" rel="noopener noreferrer">${m.t} <span class="muted">(${m.y})</span></a>
@@ -104,23 +119,30 @@ function buildTable(sel, title, color, items) {
       </div>
     </td>
   </tr>`).join("");
-  document.querySelector(sel).innerHTML =
-    `<caption style="color:${color}">${title} — top ${items.length}</caption>
-     <colgroup><col class="rank-column"><col class="poster-column"><col></colgroup>
-     <tr><th class="num">#</th><th></th><th>Movie · hover for scores</th></tr>` + rows;
-  document.querySelectorAll(`${sel} .movie-row`).forEach((row, i) => {
-    bindMovieHover(row, items[i]);
-    row.addEventListener("click", event => {
-      if (!event.target.closest("a, .diff-track")) {
-        window.open(imdb(items[i]), "_blank", "noopener,noreferrer");
-      }
+    table.tBodies[0].insertAdjacentHTML("beforeend", rows);
+    const added = Array.from(table.querySelectorAll(".movie-row")).slice(start);
+    added.forEach((row, i) => {
+      const movie = items[start + i];
+      bindMovieHover(row, movie);
+      row.addEventListener("click", event => {
+        if (!event.target.closest("a, .diff-track")) {
+          window.open(imdb(movie), "_blank", "noopener,noreferrer");
+        }
+      });
+      row.addEventListener("keydown", event => {
+        if (event.key === "Enter" && event.target === row) {
+          window.open(imdb(movie), "_blank", "noopener,noreferrer");
+        }
+      });
     });
-    row.addEventListener("keydown", event => {
-      if (event.key === "Enter" && event.target === row) {
-        window.open(imdb(items[i]), "_blank", "noopener,noreferrer");
-      }
-    });
-  });
+    table.caption.textContent = `${title} — top ${visible}`;
+    if (visible === items.length) {
+      if (document.activeElement === button && added.length) added[0].focus();
+      button.hidden = true;
+    }
+  }
+  button.addEventListener("click", showMore);
+  showMore();
 }
 // ---------- chart 1: timeline ----------
 function alignTimelineTitles(context) {
