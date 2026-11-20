@@ -1,5 +1,3 @@
-window.dashboardData = {};
-
 const RED = "#e05c55", BLUE = "#4e8de8", GREY = "#555e6e";
 const poster = m => m.img;
 const imdb = m => `https://www.imdb.com/title/${m.id}/`;
@@ -375,7 +373,6 @@ function agreementGallery(data) {
   </a>`).join("");
 }
 
-// A script data file keeps direct file:// viewing possible without fetch/CORS.
 function loadScript(src) {
     return new Promise((resolve, reject) => {
         const script = document.createElement("script");
@@ -419,10 +416,15 @@ const observer = new IntersectionObserver(entries => {
             .catch(error => showLoadError(entry.target, error));
     }
 }, {rootMargin: "150px"});
-loadScript("data.js").then(() => {
-    buildTable("#table-pos", "Critics like it more", RED,
-        dashboardData.tables.pos.map(index => dashboardData.movies[index]));
-    buildTable("#table-neg", "Users like it more", BLUE,
-        dashboardData.tables.neg.map(index => dashboardData.movies[index]));
-    for (const id of views.keys()) observer.observe(document.getElementById(id));
-}).catch(error => showLoadError(document.getElementById("table-pos"), error));
+document.addEventListener("DOMContentLoaded", () => {
+    try {
+        if (!window.dashboardData) throw new Error("Unable to load data.js");
+        buildTable("#table-pos", "Critics like it more", RED,
+            dashboardData.tables.pos.map(index => dashboardData.movies[index]));
+        buildTable("#table-neg", "Users like it more", BLUE,
+            dashboardData.tables.neg.map(index => dashboardData.movies[index]));
+        for (const id of views.keys()) observer.observe(document.getElementById(id));
+    } catch (error) {
+        showLoadError(document.getElementById("table-pos"), error);
+    }
+});
