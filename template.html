@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Critics vs IMDb users — rating discrepancy</title>
+<style>
+  body { font-family: system-ui, sans-serif; margin: 20px; background: #fafafa; color: #222; }
+  h1 { font-size: 20px; margin-bottom: 4px; }
+  p.sub { color: #666; margin-top: 0; font-size: 13px; }
+  #chart { position: relative; }
+  svg { background: #fff; border: 1px solid #ddd; border-radius: 6px; }
+  #tip {
+    position: absolute; pointer-events: none; display: none;
+    background: #222; color: #fff; padding: 6px 9px; border-radius: 4px;
+    font-size: 12px; line-height: 1.4; max-width: 280px; z-index: 10;
+  }
+  .legend { font-size: 13px; margin: 8px 0; }
+  .legend span { margin-right: 18px; }
+  .dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 5px; vertical-align: -1px; }
+  #tables { display: flex; gap: 30px; flex-wrap: wrap; margin-bottom: 24px; }
+  #tables table { border-collapse: collapse; font-size: 12px; background: #fff; border: 1px solid #ddd; border-radius: 6px; }
+  #tables caption { font-weight: 600; font-size: 13px; padding: 6px; }
+  #tables th, #tables td { padding: 3px 10px; text-align: left; border-top: 1px solid #eee; }
+  #tables td.num, #tables th.num { text-align: right; }
+</style>
+</head>
+<body>
+<h1>Critics vs IMDb users</h1>
+<div id="tables"></div>
+<p class="sub">x = Metascore − IMDb score (both in %). Left: users like it more than critics. Right: critics like it more.
+y = release year (recent at top, 1980+ only). Colored: the most extreme movie per side per year. Grey dots: 300 most-voted movies. Hover any dot.</p>
+<div class="legend">
+  <span><span class="dot" style="background:#d9534f"></span><span id="leg-pos">Critics &gt; users</span></span>
+  <span><span class="dot" style="background:#3a7bd5"></span><span id="leg-neg">Users &gt; critics</span></span>
+  <span><span class="dot" style="background:#bbb"></span>Popular movies (context)</span>
+</div>
+<div id="chart">
+  <svg id="svg" width="1300" height="1400"></svg>
+  <div id="tip"></div>
+</div>
+
+<h1 style="margin-top:36px">Metascore vs IMDb score</h1>
+<p class="sub">Each dot is a movie. Below the diagonal: critics like it more; above: users like it more.
+Colored: the 10 most extreme movies per side. Grey: the 1,200 most-voted movies.</p>
+<div class="legend">
+  <span><span class="dot" style="background:#d9534f"></span>Top 10 critics &gt; users</span>
+  <span><span class="dot" style="background:#3a7bd5"></span>Top 10 users &gt; critics</span>
+  <span><span class="dot" style="background:#bbb"></span>Popular movies (context)</span>
+</div>
+<div id="chart2" style="position:relative">
+  <svg id="svg2" width="820" height="820"></svg>
+  <div id="tip2" style="position:absolute;pointer-events:none;display:none;background:#222;color:#fff;padding:6px 9px;border-radius:4px;font-size:12px;line-height:1.4;max-width:280px;z-index:10"></div>
+</div>
+<script>
+const DATA = /*DATA*/;
+const TABLES = /*TABLES*/;
+
+// top-20 tables
+function buildTable(title, color, items) {
+  const rows = items.map((r, i) =>
+    `<tr><td class="num">${i + 1}</td><td>${r.t}</td><td class="num">${r.y}</td>` +
+    `<td class="num">${r.mc}</td><td class="num">${r.im}</td>` +
+    `<td class="num">${r.d > 0 ? "+" : ""}${r.d}</td></tr>`).join("");
+  return `<table><caption style="color:${color}">${title}</caption>` +
+    `<tr><th class="num">#</th><th>Title</th><th class="num">Year</th>` +
+    `<th class="num">MC%</th><th class="num">IMDb%</th><th class="num">diff</th></tr>` +
+    rows + `</table>`;
+}
+document.getElementById("tables").innerHTML =
+  buildTable("Top 20 — critics > users", "#d9534f", TABLES.pos) +
+  buildTable("Top 20 — users > critics", "#3a7bd5", TABLES.neg);
+
+document.getElementById("leg-pos").textContent =
+  "Critics > users (most extreme of each year)";
+document.getElementById("leg-neg").textContent =
+  "Users > critics (most extreme of each year)";
+
+const W = 1300, H = 1400, M = {top: 20, right: 30, bottom: 45, left: 70};
+const iw = W - M.left - M.right, ih = H - M.top - M.bottom;
+const svg = document.getElementById("svg");
+const NS = "http://www.w3.org/2000/svg";
+
+// symmetric x range so the zero line sits in the middle
+const dAbs = Math.max(...DATA.map(r => Math.abs(r.d))) + 2;
+const dMin = -dAbs, dMax = dAbs;
+const yMin = Math.min(...DATA.map(r => r.y)) - 2;
+const yMax = Math.max(...DATA.map(r => r.y)) + 2;
+const x = d => M.left + (d - dMin) / (dMax - dMin) * iw;
+// recent years at the top, oldest at the bottom
+const y = yr => M.top + (yMax - yr) / (yMax - yMin) * ih;
+
+function el(tag, attrs, parent) {
+  const e = document.createElementNS(NS, tag);
+  for (const k in attrs) e.setAttribute(k, attrs[k]);
+  (parent || svg).appendChild(e);
+  return e;
+}
+
+// x grid and axis
+for (let d = Math.ceil(dMin / 10) * 10; d <= dMax; d += 10) {
+  el("line", {x1: x(d), x2: x(d), y1: M.top, y2: M.top + ih,
+              stroke: d === 0 ? "#999" : "#eee", "stroke-width": d === 0 ? 1.5 : 1});
+  const t = el("text", {x: x(d), y: M.top + ih + 18, "text-anchor": "middle",
+                        "font-size": 11, fill: "#666"});
+  t.textContent = (d > 0 ? "+" : "") + d;
+}
+const xl = el("text", {x: M.left + iw / 2, y: H - 8, "text-anchor": "middle",
+                       "font-size": 12, fill: "#444"});
+xl.textContent = "Metascore − IMDb (%)";
+
+// y grid and axis (years, decade lines)
+for (let yr = Math.ceil(yMin / 10) * 10; yr <= yMax; yr += 10) {
+  el("line", {x1: M.left, x2: M.left + iw, y1: y(yr), y2: y(yr), stroke: "#eee"});
+  const t = el("text", {x: M.left - 8, y: y(yr) + 4, "text-anchor": "end",
+                        "font-size": 11, fill: "#666"});
+  t.textContent = yr;
+}
+const yl = el("text", {x: 18, y: M.top + ih / 2, "text-anchor": "middle",
+                       "font-size": 12, fill: "#444",
+                       transform: `rotate(-90 18 ${M.top + ih / 2})`});
+yl.textContent = "Year";
+
+// side labels
+const l1 = el("text", {x: x(dMin) + 10, y: M.top + 16, "font-size": 13, fill: "#3a7bd5"});
+l1.textContent = "\u2190 users like it more";
+const l2 = el("text", {x: x(dMax) - 10, y: M.top + 16, "text-anchor": "end",
+                       "font-size": 13, fill: "#d9534f"});
+l2.textContent = "critics like it more \u2192";
+
+// dots
+const tip = document.getElementById("tip");
+const chart = document.getElementById("chart");
+for (const r of DATA) {
+  if (r.c2 && !r.top) continue; // chart-2-only rows
+  const top = !!r.top;
+  const c = el("circle", {
+    cx: x(r.d), cy: y(r.y), r: top ? 6 : 3,
+    fill: top ? (r.d > 0 ? "#d9534f" : "#3a7bd5") : "#bbb",
+    "fill-opacity": top ? 0.9 : 0.45,
+    stroke: top ? "#fff" : "none", "stroke-width": top ? 1 : 0,
+  });
+  c.addEventListener("mousemove", ev => {
+    tip.style.display = "block";
+    tip.innerHTML = `<b>${r.t}</b> (${r.y})<br>` +
+      `Metascore ${r.mc}% · IMDb ${r.im}%<br>` +
+      `diff ${r.d > 0 ? "+" : ""}${r.d} · ${r.v.toLocaleString()} votes`;
+    const b = chart.getBoundingClientRect();
+    tip.style.left = (ev.clientX - b.left + 14) + "px";
+    tip.style.top = (ev.clientY - b.top - 10) + "px";
+  });
+  c.addEventListener("mouseleave", () => { tip.style.display = "none"; });
+  if (top) {
+    const t = el("text", {
+      x: x(r.d) + (r.d > 0 ? 9 : -9), y: y(r.y) + 4,
+      "text-anchor": r.d > 0 ? "start" : "end",
+      "font-size": 10, fill: "#333",
+    });
+    t.textContent = r.t.length > 32 ? r.t.slice(0, 30) + "\u2026" : r.t;
+  }
+}
+
+// ===================== Chart 2: Metascore vs IMDb =====================
+const svg2 = document.getElementById("svg2");
+const chart2 = document.getElementById("chart2");
+const tip2 = document.getElementById("tip2");
+const W2 = 820, M2 = {top: 20, right: 30, bottom: 50, left: 60};
+const iw2 = W2 - M2.left - M2.right, ih2 = W2 - M2.top - M2.bottom;
+const x2 = v => M2.left + v / 100 * iw2;
+const y2 = v => M2.top + ih2 - v / 100 * ih2;
+
+function el2(tag, attrs) {
+  const e = document.createElementNS(NS, tag);
+  for (const k in attrs) e.setAttribute(k, attrs[k]);
+  svg2.appendChild(e);
+  return e;
+}
+
+// grid, ticks, axis labels
+for (let v = 0; v <= 100; v += 10) {
+  el2("line", {x1: x2(v), x2: x2(v), y1: M2.top, y2: M2.top + ih2, stroke: "#eee"});
+  el2("line", {x1: M2.left, x2: M2.left + iw2, y1: y2(v), y2: y2(v), stroke: "#eee"});
+  let t = el2("text", {x: x2(v), y: M2.top + ih2 + 16, "text-anchor": "middle",
+                       "font-size": 11, fill: "#666"});
+  t.textContent = v;
+  t = el2("text", {x: M2.left - 8, y: y2(v) + 4, "text-anchor": "end",
+                   "font-size": 11, fill: "#666"});
+  t.textContent = v;
+}
+const xl2 = el2("text", {x: M2.left + iw2 / 2, y: W2 - 10, "text-anchor": "middle",
+                         "font-size": 12, fill: "#444"});
+xl2.textContent = "Metascore (%) — right = critics like it more";
+const yl2 = el2("text", {x: 16, y: M2.top + ih2 / 2, "text-anchor": "middle",
+                         "font-size": 12, fill: "#444",
+                         transform: `rotate(-90 16 ${M2.top + ih2 / 2})`});
+yl2.textContent = "IMDb score (%) — up = users like it more";
+
+for (const r of DATA) {
+  const ex = !!r.e2;
+  const c = el2("circle", {
+    cx: x2(r.mc), cy: y2(r.im), r: ex ? 6 : 3,
+    fill: ex ? (r.d > 0 ? "#d9534f" : "#3a7bd5") : "#bbb",
+    "fill-opacity": ex ? 0.9 : 0.45,
+    stroke: ex ? "#fff" : "none", "stroke-width": ex ? 1 : 0,
+  });
+  c.addEventListener("mousemove", ev => {
+    tip2.style.display = "block";
+    tip2.innerHTML = `<b>${r.t}</b> (${r.y})<br>` +
+      `Metascore ${r.mc}% · IMDb ${r.im}%<br>` +
+      `diff ${r.d > 0 ? "+" : ""}${r.d} · ${r.v.toLocaleString()} votes`;
+    const b = chart2.getBoundingClientRect();
+    tip2.style.left = (ev.clientX - b.left + 14) + "px";
+    tip2.style.top = (ev.clientY - b.top - 10) + "px";
+  });
+  c.addEventListener("mouseleave", () => { tip2.style.display = "none"; });
+  if (ex) {
+    const below = r.d > 0; // critics > users: point sits below the diagonal
+    const t = el2("text", {
+      x: x2(r.mc), y: y2(r.im) + (below ? 16 : -10),
+      "text-anchor": "middle", "font-size": 10, fill: "#333",
+    });
+    t.textContent = r.t.length > 28 ? r.t.slice(0, 26) + "\u2026" : r.t;
+  }
+}
+</script>
+</body>
+</html>
