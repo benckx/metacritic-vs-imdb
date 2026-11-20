@@ -38,7 +38,8 @@ def main():
         for item in data["items"]:
             css = item.get("criticScoreSummary") or {}
             img = item.get("image") or {}
-            m = TT_RE.search(img.get("bucketPath") or img.get("filename") or "")
+            bucket = img.get("bucketPath") or ""
+            m = TT_RE.search(bucket or img.get("filename") or "")
             out.write(json.dumps({
                 "title": item.get("title"),
                 "slug": item.get("slug"),
@@ -46,6 +47,7 @@ def main():
                 "tconst": m.group(1) if m else None,
                 "metascore": css.get("score"),
                 "reviewCount": css.get("reviewCount"),
+                "img": bucket or None,
             }) + "\n")
         offset += LIMIT
         print(f"{min(offset, total)}/{total}", flush=True)

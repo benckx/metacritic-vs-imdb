@@ -20,22 +20,25 @@ def load_imdb_ratings(path: str) -> dict:
     return ratings
 
 
-def load_basics_fallback(path: str, wanted: set) -> dict:
-    """Map (lowercased title, year) -> tconst for movies, for rows without a tt id.
+def load_basics_fallback(path: str, wanted: set) -> tuple:
+    """Return (title+year -> tconst map, tconst -> genres map for all movies).
 
-    Keys matching more than one IMDb movie are dropped as ambiguous.
+    Fallback keys matching more than one IMDb movie are dropped as ambiguous.
     """
     index = {}
+    genres = {}
     with open(path, newline="") as f:
         reader = csv.reader(f, delimiter="\t", quoting=csv.QUOTE_NONE)
         next(reader)
         for row in reader:
             if row[1] != "movie":
                 continue
+            if row[8] != "\\N":
+                genres[row[0]] = row[8]
             keys = {(t.lower(), row[5]) for t in (row[2], row[3])}
             for key in keys & wanted:
                 index.setdefault(key, set()).add(row[0])
-    return {k: v.pop() for k, v in index.items() if len(v) == 1}
+    return ({k: v.pop() for k, v in index.items() if len(v) == 1}, genres)
 
 
 def main():
@@ -53,18 +56,18 @@ def main():
 
     ratings = load_imdb_ratings("title.ratings.tsv")
 
-    # Fallback title+year match for rows without an embedded tt id.
+    # Fallback title+year match for rows without an embedded tt id;
+    # same pass collects genres for every IMDb movie.
     explicit = {m["tconst"] for m in movies if m["tconst"]}
     missing = [m for m in movies if not m["tconst"]]
-    if missing:
-        wanted = {(m["title"].rsplit(" (", 1)[0].lower(), str(m["year"]))
-                  for m in missing if m["year"]}
-        index = load_basics_fallback("title.basics.tsv", wanted)
-        for m in missing:
-            t = index.get((m["title"].rsplit(" (", 1)[0].lower(),
-                           str(m["year"])))
-            if t and t not in explicit:
-                m["tconst"] = t
+    wanted = {(m["title"].rsplit(" (", 1)[0].lower(), str(m["year"]))
+              for m in missing if m["year"]}
+    index, genres = load_basics_fallback("title.basics.tsv", wanted)
+    for m in missing:
+        t = index.get((m["title"].rsplit(" (", 1)[0].lower(),
+                       str(m["year"])))
+        if t and t not in explicit:
+            m["tconst"] = t
 
     rows = []
     seen = set()
@@ -79,7 +82,8 @@ def main():
         imdb_pct = imdb_rating * 10
         diff = m["metascore"] - imdb_pct
         rows.append((diff, m["title"], m["year"], t, m["metascore"],
-                     m["reviewCount"], imdb_pct, votes))
+                     m["reviewCount"], imdb_pct, votes,
+                     genres.get(t, ""), m.get("img") or ""))
 
     print(f"matched {len(rows)} movies "
           f"(votes>={args.min_votes}, critic reviews>={args.min_reviews})\n")
@@ -87,7 +91,7 @@ def main():
     def show(label, items):
         print(label)
         print(f"{'diff':>6}  {'MC%':>4}  {'IMDb%':>5}  {'votes':>9}  title")
-        for diff, title, year, t, mc, rc, ip, votes in items:
+        for diff, title, year, t, mc, rc, ip, votes, *_ in items:
             print(f"{diff:+6.1f}  {mc:>4}  {ip:>5.0f}  {votes:>9,}  "
                   f"{title} [{t}]")
         print()
@@ -98,7 +102,7 @@ def main():
          list(reversed(rows[-args.top:])))
 
     header = ["diff_pct", "title", "year", "tconst", "metascore_pct",
-              "critic_reviews", "imdb_pct", "imdb_votes"]
+              "critic_reviews", "imdb_pct", "imdb_votes", "genres", "img"]
 
     def dump(path, items):
         with open(path, "w", newline="") as f:

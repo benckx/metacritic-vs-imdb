@@ -3,227 +3,244 @@
 <head>
 <meta charset="utf-8">
 <title>Critics vs IMDb users — rating discrepancy</title>
+<script src="https://cdn.jsdelivr.net/npm/apexcharts@4"></script>
 <style>
-  body { font-family: system-ui, sans-serif; margin: 20px; background: #fafafa; color: #222; }
-  h1 { font-size: 20px; margin-bottom: 4px; }
-  p.sub { color: #666; margin-top: 0; font-size: 13px; }
-  #chart { position: relative; }
-  svg { background: #fff; border: 1px solid #ddd; border-radius: 6px; }
-  #tip {
-    position: absolute; pointer-events: none; display: none;
-    background: #222; color: #fff; padding: 6px 9px; border-radius: 4px;
-    font-size: 12px; line-height: 1.4; max-width: 280px; z-index: 10;
+  :root {
+    --bg: #0e1117; --card: #161b24; --border: #232a36;
+    --text: #dde3ec; --muted: #8b94a5;
+    --red: #e05c55; --blue: #4e8de8; --green: #4caf7d;
   }
-  .legend { font-size: 13px; margin: 8px 0; }
-  .legend span { margin-right: 18px; }
-  .dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 5px; vertical-align: -1px; }
-  #tables { display: flex; gap: 30px; flex-wrap: wrap; margin-bottom: 24px; }
-  #tables table { border-collapse: collapse; font-size: 12px; background: #fff; border: 1px solid #ddd; border-radius: 6px; }
-  #tables caption { font-weight: 600; font-size: 13px; padding: 6px; }
-  #tables th, #tables td { padding: 3px 10px; text-align: left; border-top: 1px solid #eee; }
-  #tables td.num, #tables th.num { text-align: right; }
+  * { box-sizing: border-box; }
+  body {
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    background: var(--bg); color: var(--text);
+    margin: 0; padding: 40px 16px 80px;
+  }
+  .wrap { max-width: 1040px; margin: 0 auto; }
+  h1 {
+    font-size: 30px; text-align: center; margin: 0 0 6px;
+    background: linear-gradient(90deg, var(--blue), var(--red));
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  h2 { font-size: 20px; margin: 48px 0 4px; text-align: center; }
+  p.sub { color: var(--muted); font-size: 13px; text-align: center; margin: 0 0 18px; }
+  .card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 12px; padding: 18px; margin: 0 auto 28px;
+  }
+  table { border-collapse: collapse; font-size: 13px; width: 100%; }
+  caption { font-weight: 600; font-size: 15px; padding: 4px 0 12px; text-align: left; }
+  th, td { padding: 5px 10px; text-align: left; border-top: 1px solid var(--border); }
+  th { color: var(--muted); font-weight: 500; border-top: none; }
+  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+  td.pct { border-radius: 4px; text-align: right; font-weight: 600; }
+  td.poster-cell { padding: 3px 6px; }
+  td img { width: 30px; height: 44px; object-fit: cover; border-radius: 3px; display: block; }
+  .apex-tip { display: flex; gap: 10px; padding: 10px; max-width: 300px; align-items: flex-start; }
+  .apex-tip img { width: 62px; height: 92px; object-fit: cover; border-radius: 4px; }
+  .apex-tip .tt { font-weight: 600; margin-bottom: 4px; }
+  .apex-tip .ts { color: #aab3c2; font-size: 12px; line-height: 1.5; }
+  #agree-gallery {
+    display: flex; flex-wrap: wrap; gap: 14px; justify-content: center;
+  }
+  .agree-card {
+    width: 118px; background: var(--card); border: 1px solid var(--border);
+    border-radius: 10px; overflow: hidden; text-align: center;
+  }
+  .agree-card img { width: 118px; height: 174px; object-fit: cover; display: block; }
+  .agree-card .ac-t {
+    font-size: 11px; font-weight: 600; padding: 6px 6px 2px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .agree-card .ac-s { font-size: 11px; color: var(--green); padding-bottom: 7px; }
+  .apexcharts-tooltip { background: #1d2430 !important; border: 1px solid var(--border) !important; }
 </style>
 </head>
 <body>
-<h1>Critics vs IMDb users</h1>
-<div id="tables"></div>
-<p class="sub">x = Metascore − IMDb score (both in %). Left: users like it more than critics. Right: critics like it more.
-y = release year (recent at top, 1980+ only). Colored: the most extreme movie per side per year. Grey dots: 300 most-voted movies. Hover any dot.</p>
-<div class="legend">
-  <span><span class="dot" style="background:#d9534f"></span><span id="leg-pos">Critics &gt; users</span></span>
-  <span><span class="dot" style="background:#3a7bd5"></span><span id="leg-neg">Users &gt; critics</span></span>
-  <span><span class="dot" style="background:#bbb"></span>Popular movies (context)</span>
-</div>
-<div id="chart">
-  <svg id="svg" width="1300" height="1400"></svg>
-  <div id="tip"></div>
-</div>
+<div class="wrap">
 
-<h1 style="margin-top:36px">Metascore vs IMDb score</h1>
-<p class="sub">Each dot is a movie. Below the diagonal: critics like it more; above: users like it more.
-Colored: the 10 most extreme movies per side. Grey: the 1,200 most-voted movies. Bubble size = IMDb vote count.</p>
-<div class="legend">
-  <span><span class="dot" style="background:#d9534f"></span>Top 10 critics &gt; users</span>
-  <span><span class="dot" style="background:#3a7bd5"></span>Top 10 users &gt; critics</span>
-  <span><span class="dot" style="background:#bbb"></span>Popular movies (context)</span>
-</div>
-<div id="chart2" style="position:relative">
-  <svg id="svg2" width="1000" height="1000"></svg>
-  <div id="tip2" style="position:absolute;pointer-events:none;display:none;background:#222;color:#fff;padding:6px 9px;border-radius:4px;font-size:12px;line-height:1.4;max-width:280px;z-index:10"></div>
+<h1>Critics vs IMDb users</h1>
+<p class="sub">Where Metacritic critics and IMDb users disagree the most.
+All scores in percent; diff = Metascore − IMDb. Movies since 1980.</p>
+
+<div class="card" style="max-width:860px"><table id="table-pos"></table></div>
+<div class="card" style="max-width:860px"><table id="table-neg"></table></div>
+
+<h2>Timeline of disagreement</h2>
+<p class="sub">Most extreme movie per side per year. Right: critics like it more; left: users like it more. Grey: popular movies. Hover for posters.</p>
+<div class="card" style="max-width:900px"><div id="chart1"></div></div>
+
+<h2>Metascore vs IMDb score</h2>
+<p class="sub">Bubble size = IMDb vote count. Colored: the 10 most extreme movies per side.</p>
+<div class="card" style="max-width:940px"><div id="chart2"></div></div>
+
+<h2>Most extreme by genre</h2>
+<p class="sub">Top 3 disagreements per side for the most common genres.</p>
+<div class="card" style="max-width:900px"><div id="chart-genre"></div></div>
+
+<h2>Most extreme by decade</h2>
+<p class="sub">Top 5 disagreements per side per decade.</p>
+<div class="card" style="max-width:900px"><div id="chart-decade"></div></div>
+
+<h2>Where everyone agrees</h2>
+<p class="sub">The most popular movies where critics and users give (almost) the same score.</p>
+<div id="agree-gallery"></div>
+
 </div>
 <script>
-const DATA = /*DATA*/;
-const TABLES = /*TABLES*/;
+const P = /*PAYLOAD*/;
 
-// top-20 tables
-function buildTable(title, color, items) {
-  const rows = items.map((r, i) =>
-    `<tr><td class="num">${i + 1}</td><td>${r.t}</td><td class="num">${r.y}</td>` +
-    `<td class="num">${r.mc}</td><td class="num">${r.im}</td>` +
-    `<td class="num">${r.d > 0 ? "+" : ""}${r.d}</td></tr>`).join("");
-  return `<table><caption style="color:${color}">${title}</caption>` +
-    `<tr><th class="num">#</th><th>Title</th><th class="num">Year</th>` +
-    `<th class="num">MC%</th><th class="num">IMDb%</th><th class="num">diff</th></tr>` +
-    rows + `</table>`;
+const IMG = "https://www.metacritic.com/a/img/catalog";
+const RED = "#e05c55", BLUE = "#4e8de8", GREY = "#555e6e";
+const poster = m => m.img ? IMG + m.img : null;
+const pct = v => Math.round(v) + "%";
+const sdiff = v => (v > 0 ? "+" : "") + Math.round(v) + "%";
+
+// ---------- shared tooltip ----------
+function tipHTML(m) {
+  const img = poster(m) ? `<img src="${poster(m)}" loading="lazy">` : "";
+  return `<div class="apex-tip">${img}<div>
+    <div class="tt">${m.t} (${m.y})</div>
+    <div class="ts">Metascore ${pct(m.mc)} &middot; IMDb ${pct(m.im)}<br>
+    diff ${sdiff(m.d)}<br>${m.v.toLocaleString()} votes</div></div></div>`;
 }
-document.getElementById("tables").innerHTML =
-  buildTable("Top 20 — critics > users", "#d9534f", TABLES.pos) +
-  buildTable("Top 20 — users > critics", "#3a7bd5", TABLES.neg);
+const customTip = ({ seriesIndex, dataPointIndex, w }) =>
+  tipHTML(w.config.series[seriesIndex].data[dataPointIndex].meta);
 
-document.getElementById("leg-pos").textContent =
-  "Critics > users (most extreme of each year)";
-document.getElementById("leg-neg").textContent =
-  "Users > critics (most extreme of each year)";
+const baseChart = {
+  background: "transparent",
+  fontFamily: "system-ui, sans-serif",
+  toolbar: { show: false },
+  zoom: { enabled: false },
+  animations: { enabled: true, speed: 500 },
+};
+const darkTheme = { mode: "dark" };
 
-const W = 1300, H = 1400, M = {top: 20, right: 30, bottom: 45, left: 70};
-const iw = W - M.left - M.right, ih = H - M.top - M.bottom;
-const svg = document.getElementById("svg");
-const NS = "http://www.w3.org/2000/svg";
-
-// symmetric x range so the zero line sits in the middle
-const dAbs = Math.max(...DATA.map(r => Math.abs(r.d))) + 2;
-const dMin = -dAbs, dMax = dAbs;
-const yMin = Math.min(...DATA.map(r => r.y)) - 2;
-const yMax = Math.max(...DATA.map(r => r.y)) + 2;
-const x = d => M.left + (d - dMin) / (dMax - dMin) * iw;
-// recent years at the top, oldest at the bottom
-const y = yr => M.top + (yMax - yr) / (yMax - yMin) * ih;
-
-function el(tag, attrs, parent) {
-  const e = document.createElementNS(NS, tag);
-  for (const k in attrs) e.setAttribute(k, attrs[k]);
-  (parent || svg).appendChild(e);
-  return e;
+// ---------- tables ----------
+function scoreColor(v) {           // 0 red -> 100 green
+  return `hsla(${v * 1.2}, 55%, 42%, .55)`;
 }
-
-// x grid and axis
-for (let d = Math.ceil(dMin / 10) * 10; d <= dMax; d += 10) {
-  el("line", {x1: x(d), x2: x(d), y1: M.top, y2: M.top + ih,
-              stroke: d === 0 ? "#999" : "#eee", "stroke-width": d === 0 ? 1.5 : 1});
-  const t = el("text", {x: x(d), y: M.top + ih + 18, "text-anchor": "middle",
-                        "font-size": 11, fill: "#666"});
-  t.textContent = (d > 0 ? "+" : "") + d;
+function diffColor(d) {
+  const a = Math.min(Math.abs(d) / 50, 1) * 0.75 + 0.1;
+  return d >= 0 ? `rgba(224,92,85,${a})` : `rgba(78,141,232,${a})`;
 }
-const xl = el("text", {x: M.left + iw / 2, y: H - 8, "text-anchor": "middle",
-                       "font-size": 12, fill: "#444"});
-xl.textContent = "Metascore − IMDb (%)";
-
-// y grid and axis (years, decade lines)
-for (let yr = Math.ceil(yMin / 10) * 10; yr <= yMax; yr += 10) {
-  el("line", {x1: M.left, x2: M.left + iw, y1: y(yr), y2: y(yr), stroke: "#eee"});
-  const t = el("text", {x: M.left - 8, y: y(yr) + 4, "text-anchor": "end",
-                        "font-size": 11, fill: "#666"});
-  t.textContent = yr;
+function buildTable(sel, title, color, items) {
+  const rows = items.map((m, i) => `<tr>
+    <td class="num" style="color:var(--muted)">${i + 1}</td>
+    <td class="poster-cell">${poster(m) ? `<img src="${poster(m)}" loading="lazy">` : ""}</td>
+    <td>${m.t}</td><td class="num" style="color:var(--muted)">${m.y}</td>
+    <td class="pct" style="background:${scoreColor(m.mc)}">${pct(m.mc)}</td>
+    <td class="pct" style="background:${scoreColor(m.im)}">${pct(m.im)}</td>
+    <td class="pct" style="background:${diffColor(m.d)}">${sdiff(m.d)}</td>
+  </tr>`).join("");
+  document.querySelector(sel).innerHTML =
+    `<caption style="color:${color}">${title}</caption>
+     <tr><th class="num">#</th><th></th><th>Title</th><th class="num">Year</th>
+     <th class="num">Metascore</th><th class="num">IMDb</th><th class="num">Diff</th></tr>` + rows;
 }
-const yl = el("text", {x: 18, y: M.top + ih / 2, "text-anchor": "middle",
-                       "font-size": 12, fill: "#444",
-                       transform: `rotate(-90 18 ${M.top + ih / 2})`});
-yl.textContent = "Year";
+buildTable("#table-pos", "Critics like it more — top 20", RED, P.tables.pos);
+buildTable("#table-neg", "Users like it more — top 20", BLUE, P.tables.neg);
 
-// side labels
-const l1 = el("text", {x: x(dMin) + 10, y: M.top + 16, "font-size": 13, fill: "#3a7bd5"});
-l1.textContent = "\u2190 users like it more";
-const l2 = el("text", {x: x(dMax) - 10, y: M.top + 16, "text-anchor": "end",
-                       "font-size": 13, fill: "#d9534f"});
-l2.textContent = "critics like it more \u2192";
+// ---------- chart 1: timeline ----------
+const dAbs = Math.ceil(Math.max(...[...P.chart1.ext, ...P.chart1.ctx]
+                        .map(m => Math.abs(m.d)))) + 3;
+const toXY = (m, xKey, yKey) => ({ x: m[xKey], y: m[yKey], meta: m });
+new ApexCharts(document.querySelector("#chart1"), {
+  chart: { ...baseChart, type: "scatter", height: 780 },
+  theme: darkTheme,
+  series: [
+    { name: "Critics like it more",
+      data: P.chart1.ext.filter(m => m.d > 0).map(m => toXY(m, "d", "y")) },
+    { name: "Users like it more",
+      data: P.chart1.ext.filter(m => m.d < 0).map(m => toXY(m, "d", "y")) },
+    { name: "Popular movies",
+      data: P.chart1.ctx.map(m => toXY(m, "d", "y")) },
+  ],
+  colors: [RED, BLUE, GREY],
+  markers: { size: [6, 6, 3], strokeWidth: 0, hover: { sizeOffset: 2 } },
+  xaxis: { min: -dAbs, max: dAbs, tickAmount: 10,
+           title: { text: "Metascore − IMDb (%)" },
+           labels: { formatter: v => (v > 0 ? "+" : "") + Math.round(v) } },
+  yaxis: { min: 1978, max: 2028,
+           labels: { formatter: v => Math.round(v) } },
+  grid: { borderColor: "#232a36" },
+  legend: { position: "top" },
+  tooltip: { custom: customTip, intersect: true, shared: false },
+  annotations: { xaxis: [{ x: 0, strokeDashArray: 0, borderColor: "#49536400" },
+                         { x: 0, borderColor: "#6b7689" }] },
+}).render();
 
-// dots
-const tip = document.getElementById("tip");
-const chart = document.getElementById("chart");
-for (const r of DATA) {
-  if (r.c2 && !r.top) continue; // chart-2-only rows
-  const top = !!r.top;
-  const c = el("circle", {
-    cx: x(r.d), cy: y(r.y), r: top ? 6 : 3,
-    fill: top ? (r.d > 0 ? "#d9534f" : "#3a7bd5") : "#bbb",
-    "fill-opacity": top ? 0.9 : 0.45,
-    stroke: top ? "#fff" : "none", "stroke-width": top ? 1 : 0,
+// ---------- chart 2: bubbles ----------
+const vMax = Math.max(...P.chart2.ctx.concat(P.chart2.ext).map(m => m.v));
+const toBubble = m => ({ x: m.mc, y: m.im, z: m.v, meta: m });
+new ApexCharts(document.querySelector("#chart2"), {
+  chart: { ...baseChart, type: "bubble", height: 640 },
+  theme: darkTheme,
+  series: [
+    { name: "Critics like it more",
+      data: P.chart2.ext.filter(m => m.d > 0).map(toBubble) },
+    { name: "Users like it more",
+      data: P.chart2.ext.filter(m => m.d < 0).map(toBubble) },
+    { name: "Popular movies", data: P.chart2.ctx.map(toBubble) },
+  ],
+  colors: [RED, BLUE, GREY],
+  fill: { type: "solid", opacity: [0.9, 0.9, 0.35] },
+  plotOptions: { bubble: { minBubbleRadius: 2, maxBubbleRadius: 18,
+                           zScaling: true } },
+  dataLabels: { enabled: false },
+  markers: { strokeWidth: 0 },
+  stroke: { show: false, width: 0 },
+  xaxis: { min: 0, max: 100, tickAmount: 10, title: { text: "Metascore (%)" },
+           labels: { formatter: v => Math.round(v) } },
+  yaxis: { min: 0, max: 100, tickAmount: 10,
+           title: { text: "IMDb score (%)" } },
+  grid: { borderColor: "#232a36" },
+  legend: { position: "top" },
+  tooltip: { custom: customTip, intersect: true, shared: false },
+}).render();
+
+// ---------- category scatter (genres / decades) ----------
+function categoryChart(sel, groups, height) {
+  const labels = groups.map(g => g.g);
+  const mk = (list, idx) => list.map(m => ({ x: m.d, y: idx, meta: m }));
+  let posPts = [], negPts = [];
+  groups.forEach((g, i) => {
+    posPts = posPts.concat(mk(g.pos, i));
+    negPts = negPts.concat(mk(g.neg, i));
   });
-  c.addEventListener("mousemove", ev => {
-    tip.style.display = "block";
-    tip.innerHTML = `<b>${r.t}</b> (${r.y})<br>` +
-      `Metascore ${r.mc}% · IMDb ${r.im}%<br>` +
-      `diff ${r.d > 0 ? "+" : ""}${r.d} · ${r.v.toLocaleString()} votes`;
-    const b = chart.getBoundingClientRect();
-    tip.style.left = (ev.clientX - b.left + 14) + "px";
-    tip.style.top = (ev.clientY - b.top - 10) + "px";
-  });
-  c.addEventListener("mouseleave", () => { tip.style.display = "none"; });
-  if (top) {
-    const t = el("text", {
-      x: x(r.d) + (r.d > 0 ? 9 : -9), y: y(r.y) + 4,
-      "text-anchor": r.d > 0 ? "start" : "end",
-      "font-size": 10, fill: "#333",
-    });
-    t.textContent = r.t.length > 32 ? r.t.slice(0, 30) + "\u2026" : r.t;
-  }
+  const all = posPts.concat(negPts).map(p => Math.abs(p.x));
+  const lim = Math.ceil(Math.max(...all)) + 4;
+  new ApexCharts(document.querySelector(sel), {
+    chart: { ...baseChart, type: "scatter", height },
+    theme: darkTheme,
+    series: [
+      { name: "Critics like it more", data: posPts },
+      { name: "Users like it more", data: negPts },
+    ],
+    colors: [RED, BLUE],
+    markers: { size: 6, strokeWidth: 0, hover: { sizeOffset: 2 } },
+    xaxis: { min: -lim, max: lim, tickAmount: 10,
+             title: { text: "Metascore − IMDb (%)" },
+             labels: { formatter: v => (v > 0 ? "+" : "") + Math.round(v) } },
+    yaxis: { min: -1, max: labels.length,
+             tickAmount: labels.length + 1,
+             labels: { formatter: v => labels[Math.round(v)] ?? "" } },
+    grid: { borderColor: "#232a36" },
+    legend: { position: "top" },
+    tooltip: { custom: customTip, intersect: true, shared: false },
+    annotations: { xaxis: [{ x: 0, borderColor: "#6b7689" }] },
+  }).render();
 }
+categoryChart("#chart-genre", P.genres, 60 + P.genres.length * 46);
+categoryChart("#chart-decade", P.decades, 60 + P.decades.length * 60);
 
-// ===================== Chart 2: Metascore vs IMDb =====================
-const svg2 = document.getElementById("svg2");
-const chart2 = document.getElementById("chart2");
-const tip2 = document.getElementById("tip2");
-const W2 = 1000, M2 = {top: 20, right: 30, bottom: 50, left: 60};
-const iw2 = W2 - M2.left - M2.right, ih2 = W2 - M2.top - M2.bottom;
-const x2 = v => M2.left + v / 100 * iw2;
-const y2 = v => M2.top + ih2 - v / 100 * ih2;
-// bubble area proportional to IMDb vote count
-const vMax2 = Math.max(...DATA.map(r => r.v));
-const r2 = v => 2 + 16 * Math.sqrt(v / vMax2);
-
-function el2(tag, attrs) {
-  const e = document.createElementNS(NS, tag);
-  for (const k in attrs) e.setAttribute(k, attrs[k]);
-  svg2.appendChild(e);
-  return e;
-}
-
-// grid, ticks, axis labels
-for (let v = 0; v <= 100; v += 10) {
-  el2("line", {x1: x2(v), x2: x2(v), y1: M2.top, y2: M2.top + ih2, stroke: "#eee"});
-  el2("line", {x1: M2.left, x2: M2.left + iw2, y1: y2(v), y2: y2(v), stroke: "#eee"});
-  let t = el2("text", {x: x2(v), y: M2.top + ih2 + 16, "text-anchor": "middle",
-                       "font-size": 11, fill: "#666"});
-  t.textContent = v;
-  t = el2("text", {x: M2.left - 8, y: y2(v) + 4, "text-anchor": "end",
-                   "font-size": 11, fill: "#666"});
-  t.textContent = v;
-}
-const xl2 = el2("text", {x: M2.left + iw2 / 2, y: W2 - 10, "text-anchor": "middle",
-                         "font-size": 12, fill: "#444"});
-xl2.textContent = "Metascore (%) — right = critics like it more";
-const yl2 = el2("text", {x: 16, y: M2.top + ih2 / 2, "text-anchor": "middle",
-                         "font-size": 12, fill: "#444",
-                         transform: `rotate(-90 16 ${M2.top + ih2 / 2})`});
-yl2.textContent = "IMDb score (%) — up = users like it more";
-
-for (const r of DATA) {
-  const ex = !!r.e2;
-  const c = el2("circle", {
-    cx: x2(r.mc), cy: y2(r.im), r: r2(r.v),
-    fill: ex ? (r.d > 0 ? "#d9534f" : "#3a7bd5") : "#bbb",
-    "fill-opacity": ex ? 0.85 : 0.4,
-    stroke: ex ? "#fff" : "none", "stroke-width": ex ? 1 : 0,
-  });
-  c.addEventListener("mousemove", ev => {
-    tip2.style.display = "block";
-    tip2.innerHTML = `<b>${r.t}</b> (${r.y})<br>` +
-      `Metascore ${r.mc}% · IMDb ${r.im}%<br>` +
-      `diff ${r.d > 0 ? "+" : ""}${r.d} · ${r.v.toLocaleString()} votes`;
-    const b = chart2.getBoundingClientRect();
-    tip2.style.left = (ev.clientX - b.left + 14) + "px";
-    tip2.style.top = (ev.clientY - b.top - 10) + "px";
-  });
-  c.addEventListener("mouseleave", () => { tip2.style.display = "none"; });
-  if (ex) {
-    const below = r.d > 0; // critics > users: point sits below the diagonal
-    const t = el2("text", {
-      x: x2(r.mc), y: y2(r.im) + (below ? r2(r.v) + 12 : -(r2(r.v) + 6)),
-      "text-anchor": "middle", "font-size": 10, fill: "#333",
-    });
-    t.textContent = r.t.length > 28 ? r.t.slice(0, 26) + "\u2026" : r.t;
-  }
-}
+// ---------- agreement gallery ----------
+document.getElementById("agree-gallery").innerHTML = P.agree.map(m => `
+  <div class="agree-card" title="${m.t} (${m.y}) — Metascore ${pct(m.mc)}, IMDb ${pct(m.im)}">
+    ${poster(m) ? `<img src="${poster(m)}" loading="lazy">` : ""}
+    <div class="ac-t">${m.t}</div>
+    <div class="ac-s">${pct(m.mc)} = ${pct(m.im)}</div>
+  </div>`).join("");
 </script>
 </body>
 </html>
