@@ -116,8 +116,9 @@ for start in range(1980, latest_year + 1, 5):
                     "pos": [slim(r) for r in p[:TOP_PERIOD]],
                     "neg": [slim(r) for r in n[:TOP_PERIOD]]})
 
-# Agreement: most popular movies where critics and users match (|diff| <= 1).
+# Agreement: most popular movies where critics and users match, sorted by score.
 agree = [slim(r, False) for r in by_pop if abs(r["d"]) <= 1][:TOP_AGREE]
+agree.sort(key=lambda r: r["mc"] + r["im"], reverse=True)
 
 
 def category_input(groups, row_height):
