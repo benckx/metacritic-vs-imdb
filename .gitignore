@@ -1,3 +1,4 @@
 # IMDb datasets (fetch with ./fetch_imdb.sh)
 *.tsv
 *.tsv.gz
+.idea
