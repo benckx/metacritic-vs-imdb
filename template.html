@@ -41,14 +41,14 @@ y = release year (recent at top, 1980+ only). Colored: the most extreme movie pe
 
 <h1 style="margin-top:36px">Metascore vs IMDb score</h1>
 <p class="sub">Each dot is a movie. Below the diagonal: critics like it more; above: users like it more.
-Colored: the 10 most extreme movies per side. Grey: the 1,200 most-voted movies.</p>
+Colored: the 10 most extreme movies per side. Grey: the 1,200 most-voted movies. Bubble size = IMDb vote count.</p>
 <div class="legend">
   <span><span class="dot" style="background:#d9534f"></span>Top 10 critics &gt; users</span>
   <span><span class="dot" style="background:#3a7bd5"></span>Top 10 users &gt; critics</span>
   <span><span class="dot" style="background:#bbb"></span>Popular movies (context)</span>
 </div>
 <div id="chart2" style="position:relative">
-  <svg id="svg2" width="820" height="820"></svg>
+  <svg id="svg2" width="1000" height="1000"></svg>
   <div id="tip2" style="position:absolute;pointer-events:none;display:none;background:#222;color:#fff;padding:6px 9px;border-radius:4px;font-size:12px;line-height:1.4;max-width:280px;z-index:10"></div>
 </div>
 <script>
@@ -163,10 +163,13 @@ for (const r of DATA) {
 const svg2 = document.getElementById("svg2");
 const chart2 = document.getElementById("chart2");
 const tip2 = document.getElementById("tip2");
-const W2 = 820, M2 = {top: 20, right: 30, bottom: 50, left: 60};
+const W2 = 1000, M2 = {top: 20, right: 30, bottom: 50, left: 60};
 const iw2 = W2 - M2.left - M2.right, ih2 = W2 - M2.top - M2.bottom;
 const x2 = v => M2.left + v / 100 * iw2;
 const y2 = v => M2.top + ih2 - v / 100 * ih2;
+// bubble area proportional to IMDb vote count
+const vMax2 = Math.max(...DATA.map(r => r.v));
+const r2 = v => 2 + 16 * Math.sqrt(v / vMax2);
 
 function el2(tag, attrs) {
   const e = document.createElementNS(NS, tag);
@@ -197,9 +200,9 @@ yl2.textContent = "IMDb score (%) — up = users like it more";
 for (const r of DATA) {
   const ex = !!r.e2;
   const c = el2("circle", {
-    cx: x2(r.mc), cy: y2(r.im), r: ex ? 6 : 3,
+    cx: x2(r.mc), cy: y2(r.im), r: r2(r.v),
     fill: ex ? (r.d > 0 ? "#d9534f" : "#3a7bd5") : "#bbb",
-    "fill-opacity": ex ? 0.9 : 0.45,
+    "fill-opacity": ex ? 0.85 : 0.4,
     stroke: ex ? "#fff" : "none", "stroke-width": ex ? 1 : 0,
   });
   c.addEventListener("mousemove", ev => {
@@ -215,7 +218,7 @@ for (const r of DATA) {
   if (ex) {
     const below = r.d > 0; // critics > users: point sits below the diagonal
     const t = el2("text", {
-      x: x2(r.mc), y: y2(r.im) + (below ? 16 : -10),
+      x: x2(r.mc), y: y2(r.im) + (below ? r2(r.v) + 12 : -(r2(r.v) + 6)),
       "text-anchor": "middle", "font-size": 10, fill: "#333",
     });
     t.textContent = r.t.length > 28 ? r.t.slice(0, 26) + "\u2026" : r.t;
