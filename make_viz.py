@@ -16,7 +16,7 @@ from urllib.request import Request, urlopen
 from PIL import Image
 
 MIN_YEAR = 1980          # everything older is excluded entirely
-CONTEXT1 = 100           # grey dots on the timeline chart
+CONTEXT1 = 500           # grey dots on the timeline chart
 CONTEXT2 = 1000          # grey bubbles on the Metascore vs IMDb chart
 TOP_TABLE = 50           # movies available per table
 TOP_AGREE = 49           # movies in the agreement gallery
@@ -120,17 +120,6 @@ for start in range(1980, latest_year + 1, 5):
 agree = [slim(r, False) for r in by_pop if abs(r["d"]) <= 1][:TOP_AGREE]
 
 
-def movie_series(chart, x_key, y_key):
-    groups = [
-        ("Critics like it more", [m for m in chart["ext"] if m["d"] > 0]),
-        ("Users like it more", [m for m in chart["ext"] if m["d"] < 0]),
-        ("Popular movies", chart["ctx"]),
-    ]
-    return [{"name": name,
-             "data": [{"x": m[x_key], "y": m[y_key], "meta": m} for m in movies]}
-            for name, movies in groups]
-
-
 def category_input(groups, row_height):
     categories = groups
     series = [
@@ -156,7 +145,9 @@ def category_input(groups, row_height):
 payload = {
     "tables": tables,
     "chart1": {
-        "series": movie_series(chart1, "d", "y"),
+        "pos": [m for m in chart1["ext"] if m["d"] > 0],
+        "neg": [m for m in chart1["ext"] if m["d"] < 0],
+        "ctx": chart1["ctx"],
         "limit": math.ceil(max(abs(m["d"]) for m in chart1["ext"] + chart1["ctx"])) + 3,
     },
     "chart2": {"pos": [m for m in chart2["ext"] if m["d"] > 0],

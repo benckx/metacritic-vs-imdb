@@ -18,7 +18,7 @@ All scores in percent; diff = Metascore − IMDb. Movies since 1980.</p>
 
 <h2>Timeline of disagreement</h2>
 <p class="sub">Most extreme movie per side per year. Right: critics like it more; left: users like it more.
-Grey: 100 popular movies. Hover for posters.</p>
+Grey: 500 popular movies. Hover for posters.</p>
 <div class="card timeline-card"><div id="chart1"></div></div>
 
 <h2>Metascore vs IMDb score</h2>
@@ -222,6 +222,16 @@ function alignTimelineTitles(context) {
 }
 function timelineChart(data) {
 const dAbs = data.limit;
+const series = [
+  ["Critics like it more", data.pos],
+  ["Users like it more", data.neg],
+  ["Popular movies", data.ctx],
+].map(([name, indexes]) => ({
+  name, data: indexes.map(movie => {
+    const m = dashboardData.movies[movie];
+    return { x: m.d, y: m.y, movie };
+  }),
+}));
 return new ApexCharts(document.querySelector("#chart1"), {
   chart: {
     ...baseChart, type: "scatter", height: 780,
@@ -232,7 +242,7 @@ return new ApexCharts(document.querySelector("#chart1"), {
     },
   },
   theme: darkTheme,
-  series: data.series,
+  series,
   colors: [RED, BLUE, GREY],
   markers: { size: [6, 6, 3], strokeWidth: 0, hover: { sizeOffset: 2 } },
   dataLabels: { enabled: false },
