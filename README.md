@@ -12,11 +12,11 @@ Open `index.html` in a browser to see the result:
   extreme movie per side per year, with popular movies as context
 - a Metascore vs IMDb scatter where bubble size reflects IMDb vote count
 
-Keep `styles.css`, `dashboard.js`, and `data.js` beside `index.html`.
+Keep `styles.css`, `dashboard.js`, `data.js`, and `posters/` beside `index.html`.
 `make_viz.py` precomputes each visualization's selected points, coordinates,
 averages, and axis limits. Each view's input must stay below 10 KB; movie
 details are stored once in a shared lookup. Charts render only when they
-approach the viewport. ApexCharts and posters require an internet connection.
+approach the viewport. ApexCharts requires an internet connection.
 
 All scores are expressed in percent; the discrepancy is
 `Metascore − IMDb rating × 10`. Positive means critics like the movie more
@@ -43,8 +43,10 @@ python3 compare.py           # join + rank -> critics_over_users.csv, users_over
 python3 make_viz.py          # generate index.html, dashboard.js, and data.js
 ```
 
-Only the first two pipeline steps hit the network; `compare.py` and
-`make_viz.py` run offline. Thresholds are flags on `compare.py`
+`make_viz.py` downloads each poster it needs once, shrinks it to 236×348 WebP
+in `posters/` (Metacritic originals are ~2000×3000, ~1 MB), and reuses cached
+files afterwards. It requires Pillow (`pip install pillow`). `compare.py` runs
+offline. Thresholds are flags on `compare.py`
 (`--min-votes`, `--min-reviews`) and constants at the top of `make_viz.py`
 (`MIN_YEAR`, `CONTEXT1`, `TOP2`, `CONTEXT2`).
 
@@ -60,4 +62,5 @@ Only the first two pipeline steps hit the network; `compare.py` and
 | `index.html` | generated dashboard shell |
 | `styles.css` | dashboard styles |
 | `dashboard.js` | generated renderer and lazy-loading code |
+| `posters/` | generated, resized poster thumbnails |
 | `data.js` | generated, precomputed inputs and shared movie details; supports direct `file://` viewing |
