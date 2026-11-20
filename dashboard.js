@@ -207,10 +207,22 @@ return new ApexCharts(document.querySelector("#chart1"), {
 
 // ---------- chart 2: bubbles ----------
 function bubbleChart(data) {
+const maxVotes = Math.max(...[...data.pos, ...data.neg, ...data.ctx]
+  .map(index => dashboardData.movies[index].v));
+const series = [
+  ["Critics like it more", data.pos],
+  ["Users like it more", data.neg],
+  ["Popular movies", data.ctx],
+].map(([name, indexes]) => ({
+  name, data: indexes.map(movie => {
+    const m = dashboardData.movies[movie];
+    return { x: m.mc, y: m.im, z: 2 + 10 * Math.sqrt(m.v / maxVotes), movie };
+  }),
+}));
 return new ApexCharts(document.querySelector("#chart2"), {
   chart: { ...baseChart, type: "bubble", height: "100%", parentHeightOffset: 0 },
   theme: darkTheme,
-  series: data.series,
+  series,
   colors: [RED, BLUE, GREY],
   fill: { type: "solid", opacity: [0.9, 0.9, 0.35] },
   plotOptions: { bubble: { zScaling: false } },

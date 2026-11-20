@@ -7,16 +7,16 @@ discrepancies, and renders an interactive visualization.
 
 Open `index.html` in a browser to see the result:
 
-- two tables with the 40 most extreme movies per side, shown 10 at a time
+- two tables with the 50 most extreme movies per side, shown 10 at a time
 - a timeline scatter (diff on x, release year on y) highlighting the most
   extreme movie per side per year, with popular movies as context
 - a Metascore vs IMDb scatter where bubble size reflects IMDb vote count
 
 Keep `styles.css`, `dashboard.js`, `data.js`, and `posters/` beside `index.html`.
-`make_viz.py` precomputes each visualization's selected points, coordinates,
-averages, and axis limits. Each view's input must stay below 10 KB; movie
-details are stored once in a shared lookup. Charts render only when they
-approach the viewport. ApexCharts requires an internet connection.
+`make_viz.py` precomputes each visualization's selected movies, averages, and
+axis limits. Each view's input must stay below 10 KB; movie details are stored
+once in a shared lookup. Charts render only when they approach the viewport.
+ApexCharts requires an internet connection.
 
 All scores are expressed in percent; the discrepancy is
 `Metascore − IMDb rating × 10`. Positive means critics like the movie more

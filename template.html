@@ -21,7 +21,7 @@ Grey: 100 popular movies. Hover for posters.</p>
 <div class="card timeline-card"><div id="chart1"></div></div>
 
 <h2>Metascore vs IMDb score</h2>
-<p class="sub">Colored: the 15 most extreme movies per side. Grey: 200 popular movies.
+<p class="sub">Colored: the 15 most extreme movies per side. Grey: 500 popular movies.
 Bubble area follows IMDb vote count, with a minimum size for visibility.</p>
 <div class="card bubble-card"><div id="chart2"></div></div>
 
@@ -251,10 +251,22 @@ return new ApexCharts(document.querySelector("#chart1"), {
 
 // ---------- chart 2: bubbles ----------
 function bubbleChart(data) {
+const maxVotes = Math.max(...[...data.pos, ...data.neg, ...data.ctx]
+  .map(index => dashboardData.movies[index].v));
+const series = [
+  ["Critics like it more", data.pos],
+  ["Users like it more", data.neg],
+  ["Popular movies", data.ctx],
+].map(([name, indexes]) => ({
+  name, data: indexes.map(movie => {
+    const m = dashboardData.movies[movie];
+    return { x: m.mc, y: m.im, z: 2 + 10 * Math.sqrt(m.v / maxVotes), movie };
+  }),
+}));
 return new ApexCharts(document.querySelector("#chart2"), {
   chart: { ...baseChart, type: "bubble", height: "100%", parentHeightOffset: 0 },
   theme: darkTheme,
-  series: data.series,
+  series,
   colors: [RED, BLUE, GREY],
   fill: { type: "solid", opacity: [0.9, 0.9, 0.35] },
   plotOptions: { bubble: { zScaling: false } },

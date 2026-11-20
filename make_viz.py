@@ -17,8 +17,8 @@ from PIL import Image
 
 MIN_YEAR = 1980          # everything older is excluded entirely
 CONTEXT1 = 100           # grey dots on the timeline chart
-CONTEXT2 = 200           # grey bubbles on the Metascore vs IMDb chart
-TOP_TABLE = 40           # movies available per table
+CONTEXT2 = 500           # grey bubbles on the Metascore vs IMDb chart
+TOP_TABLE = 50           # movies available per table
 TOP_AGREE = 49           # movies in the agreement gallery
 TOP2 = 15                # extremes per side on the bubble chart
 TOP_GENRE = 1            # extremes per side per genre
@@ -117,21 +117,15 @@ for d0 in range(1980, 2030, 10):
 agree = [slim(r, False) for r in by_pop if abs(r["d"]) <= 1][:TOP_AGREE]
 
 
-def movie_series(chart, x_key, y_key, bubble=False):
+def movie_series(chart, x_key, y_key):
     groups = [
         ("Critics like it more", [m for m in chart["ext"] if m["d"] > 0]),
         ("Users like it more", [m for m in chart["ext"] if m["d"] < 0]),
         ("Popular movies", chart["ctx"]),
     ]
-    series = []
-    max_votes = max(m["v"] for m in chart["ext"] + chart["ctx"]) if bubble else 0
-    for name, movies in groups:
-        points = [{"x": m[x_key], "y": m[y_key], "meta": m} for m in movies]
-        if bubble:
-            for point in points:
-                point["z"] = round(2 + 10 * math.sqrt(point["meta"]["v"] / max_votes), 3)
-        series.append({"name": name, "data": points})
-    return series
+    return [{"name": name,
+             "data": [{"x": m[x_key], "y": m[y_key], "meta": m} for m in movies]}
+            for name, movies in groups]
 
 
 def category_input(groups, row_height):
@@ -162,7 +156,9 @@ payload = {
         "series": movie_series(chart1, "d", "y"),
         "limit": math.ceil(max(abs(m["d"]) for m in chart1["ext"] + chart1["ctx"])) + 3,
     },
-    "chart2": {"series": movie_series(chart2, "mc", "im", bubble=True)},
+    "chart2": {"pos": [m for m in chart2["ext"] if m["d"] > 0],
+               "neg": [m for m in chart2["ext"] if m["d"] < 0],
+               "ctx": chart2["ctx"]},
     "genres": category_input(genres, 46),
     "decades": category_input(decades, 60),
     "agree": agree,
