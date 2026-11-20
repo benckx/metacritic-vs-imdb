@@ -1,90 +1,209 @@
 #!/usr/bin/env python3
-"""Build index.html: scatter of critic/user rating discrepancies.
+"""Build index.html: critic vs user rating discrepancy dashboard.
 
-Data = top N extremes per side (highlighted) + popular movies of the
-last 40 years (>= min votes) as context dots.
+Reads the ranking CSVs and writes the page, renderer, and compact shared data.
 """
 import csv
 import json
+import math
+from collections import defaultdict
+from statistics import mean
+from pathlib import Path
 
-MIN_YEAR = 1980  # everything older is excluded entirely
-CONTEXT = 300  # most-voted popular movies kept as context
+MIN_YEAR = 1980          # everything older is excluded entirely
+CONTEXT1 = 100           # grey dots on the timeline chart
+CONTEXT2 = 120           # grey bubbles on the Metascore vs IMDb chart
+TOP_TABLE = 10           # rows per table
+TOP_AGREE = 20           # movies in the agreement gallery
+TOP2 = 15                # extremes per side on the bubble chart
+TOP_GENRE = 1            # extremes per side per genre
+TOP_DECADE = 1           # extremes per side per decade
+GENRE_COUNT = 12         # how many genres to show
+
+
+def slim(r, include_votes=True):
+    movie = {key: r[key] for key in ("id", "t", "y", "d", "mc", "im", "img")}
+    if include_votes:
+        movie["v"] = r["v"]
+    return movie
+
 
 rows = []
 for path in ("critics_over_users.csv", "users_over_critics.csv"):
     for r in csv.DictReader(open(path)):
         rows.append({
+            "id": r["tconst"],
             "t": r["title"],
             "y": int(r["year"]) if r["year"] else None,
             "d": float(r["diff_pct"]),
             "mc": int(r["metascore_pct"]),
             "im": float(r["imdb_pct"]),
             "v": int(r["imdb_votes"]),
+            "g": r["genres"].split(",") if r["genres"] else [],
+            "img": r["img"] or None,
         })
 rows = [r for r in rows if r["y"] and r["y"] >= MIN_YEAR]
+by_pop = sorted(rows, key=lambda r: -r["v"])
 
-# Per year: most extreme positive (critics > users) and most extreme
-# negative (users > critics) movie.
-by_year = {}
+# Tables: global top N per side.
+pos_all = sorted((r for r in rows if r["d"] > 0), key=lambda r: -r["d"])
+neg_all = sorted((r for r in rows if r["d"] < 0), key=lambda r: r["d"])
+tables = {"pos": [slim(r, False) for r in pos_all[:TOP_TABLE]],
+          "neg": [slim(r, False) for r in neg_all[:TOP_TABLE]]}
+
+# Chart 1 (timeline): most extreme per side per year + popular context.
+by_year = defaultdict(list)
 for r in rows:
-    by_year.setdefault(r["y"], []).append(r)
-
-tops = []
-for yr, items in by_year.items():
+    by_year[r["y"]].append(r)
+ext1 = []
+for items in by_year.values():
     p = max(items, key=lambda r: r["d"])
     n = min(items, key=lambda r: r["d"])
     if p["d"] > 0:
-        tops.append(p)
+        ext1.append(p)
     if n["d"] < 0 and n is not p:
-        tops.append(n)
-for r in tops:
-    r["top"] = 1
+        ext1.append(n)
+ids1 = {id(r) for r in ext1}
+ctx1 = [r for r in by_pop if id(r) not in ids1][:CONTEXT1]
+chart1 = {"ext": [slim(r) for r in ext1], "ctx": [slim(r) for r in ctx1]}
 
-# Chart 2: global most extreme per side (Metascore vs IMDb scatter).
-TOP2 = 10
-for r in sorted((r for r in rows if r["d"] > 0), key=lambda r: -r["d"])[:TOP2]:
-    r["e2"] = 1
-for r in sorted((r for r in rows if r["d"] < 0), key=lambda r: r["d"])[:TOP2]:
-    r["e2"] = 1
+# Chart 2 (Metascore vs IMDb bubbles): global extremes + popular context.
+ext2 = pos_all[:TOP2] + neg_all[:TOP2]
+ids2 = {id(r) for r in ext2}
+ctx2 = [r for r in by_pop if id(r) not in ids2][:CONTEXT2]
+chart2 = {"ext": [slim(r) for r in ext2], "ctx": [slim(r) for r in ctx2]}
 
-top_keys = {(r["t"], r["y"]) for r in tops}
-context = [r for r in rows if (r["t"], r["y"]) not in top_keys]
-context = sorted(context, key=lambda r: -r["v"])[:CONTEXT]
+# By genre: most extreme per side for the most common genres.
+genre_counts = defaultdict(int)
+for r in rows:
+    for g in r["g"]:
+        genre_counts[g] += 1
+top_genres = [g for g, _ in sorted(genre_counts.items(),
+                                   key=lambda kv: -kv[1])[:GENRE_COUNT]]
+genres = []
+for g in top_genres:
+    items = [r for r in rows if g in r["g"]]
+    p = sorted((r for r in items if r["d"] > 0), key=lambda r: -r["d"])
+    n = sorted((r for r in items if r["d"] < 0), key=lambda r: r["d"])
+    genres.append({"g": g,
+                   "average": mean(r["d"] for r in items),
+                   "count": len(items),
+                   "pos": [slim(r) for r in p[:TOP_GENRE]],
+                   "neg": [slim(r) for r in n[:TOP_GENRE]]})
 
-included = {id(r) for r in context + tops}
-extra_e2 = [r for r in rows if r.get("e2") and id(r) not in included]
+# By decade: most extreme per side, 1980s .. 2020s.
+decades = []
+for d0 in range(1980, 2030, 10):
+    items = [r for r in rows if d0 <= r["y"] < d0 + 10]
+    if not items:
+        continue
+    p = sorted((r for r in items if r["d"] > 0), key=lambda r: -r["d"])
+    n = sorted((r for r in items if r["d"] < 0), key=lambda r: r["d"])
+    decades.append({"g": f"{d0}s",
+                    "average": mean(r["d"] for r in items),
+                    "count": len(items),
+                    "pos": [slim(r) for r in p[:TOP_DECADE]],
+                    "neg": [slim(r) for r in n[:TOP_DECADE]]})
 
-# Extra context for chart 2 only (flag c2 keeps it out of chart 1).
-CONTEXT2 = 1200
-for r in extra_e2:
-    r["c2"] = 1
-pool = sorted(rows, key=lambda r: -r["v"])
-extra_c2 = []
-taken = included | {id(r) for r in extra_e2}
-for r in pool:
-    if len(context) + len(extra_c2) >= CONTEXT2:
-        break
-    if id(r) not in taken:
-        r["c2"] = 1
-        extra_c2.append(r)
+# Agreement: most popular movies where critics and users match (|diff| <= 1).
+agree = [slim(r, False) for r in by_pop if abs(r["d"]) <= 1][:TOP_AGREE]
 
-data = context + extra_c2 + extra_e2 + tops  # tops last, drawn on top
-print(f"{len(tops)} per-year extremes, "
-      f"{sum(1 for r in rows if r.get('e2'))} chart-2 extremes, "
-      f"{len(context)} shared + {len(extra_c2)} chart-2-only context movies")
 
-# Tables: global top 20 per side.
-tables = {
-    "pos": sorted((r for r in rows if r["d"] > 0),
-                  key=lambda r: -r["d"])[:20],
-    "neg": sorted((r for r in rows if r["d"] < 0),
-                  key=lambda r: r["d"])[:20],
+def movie_series(chart, x_key, y_key, bubble=False):
+    groups = [
+        ("Critics like it more", [m for m in chart["ext"] if m["d"] > 0]),
+        ("Users like it more", [m for m in chart["ext"] if m["d"] < 0]),
+        ("Popular movies", chart["ctx"]),
+    ]
+    series = []
+    highlight_floor = max(m["v"] for m in chart["ext"] + chart["ctx"]) / 4 if bubble else 0
+    for index, (name, movies) in enumerate(groups):
+        points = [{"x": m[x_key], "y": m[y_key], "meta": m} for m in movies]
+        if bubble:
+            for point in points:
+                # Highlighted bubbles stay visible; tooltips retain the true vote count.
+                point["z"] = max(point["meta"]["v"], highlight_floor) if index < 2 else point["meta"]["v"]
+        series.append({"name": name, "data": points})
+    return series
+
+
+def category_input(groups, row_height):
+    categories = groups
+    series = [
+        {"name": "Critics like it more", "data": []},
+        {"name": "Users like it more", "data": []},
+        {"name": "Category mean", "data": []},
+    ]
+    for index, category in enumerate(categories):
+        for side, name in enumerate(("pos", "neg")):
+            series[side]["data"].extend(
+                {"x": m["d"], "y": index, "meta": m} for m in category[name]
+            )
+        summary = {key: category[key] for key in ("g", "average", "count")}
+        series[2]["data"].append({"x": category["average"], "y": index, "meta": summary})
+    return {
+        "series": series,
+        "labels": [g["g"] for g in categories],
+        "limit": math.ceil(max(abs(p["x"]) for s in series for p in s["data"])) + 4,
+        "height": 60 + len(categories) * row_height,
+    }
+
+
+payload = {
+    "tables": tables,
+    "chart1": {
+        "series": movie_series(chart1, "d", "y"),
+        "limit": math.ceil(max(abs(m["d"]) for m in chart1["ext"] + chart1["ctx"])) + 3,
+    },
+    "chart2": {"series": movie_series(chart2, "mc", "im", bubble=True)},
+    "genres": category_input(genres, 46),
+    "decades": category_input(decades, 60),
+    "agree": agree,
 }
 
-with open("template.html") as f:
-    html = f.read()
-html = html.replace("/*DATA*/", json.dumps(data, separators=(",", ":")))
-html = html.replace("/*TABLES*/", json.dumps(tables, separators=(",", ":")))
-with open("index.html", "w") as f:
-    f.write(html)
-print("wrote index.html")
+movies = []
+movie_indexes = {}
+movie_rows = {r["id"]: r for r in rows}
+
+
+def movie_index(movie):
+    key = movie["id"]
+    if key not in movie_indexes:
+        movie_indexes[key] = len(movies)
+        movies.append(slim(movie_rows[key]))
+    return movie_indexes[key]
+
+
+def share_movies(value):
+    if isinstance(value, list):
+        return [share_movies(item) for item in value]
+    if isinstance(value, dict):
+        if "id" in value:
+            return movie_index(value)
+        if "meta" in value and "id" in value["meta"]:
+            return {**{k: v for k, v in value.items() if k != "meta"},
+                    "movie": movie_index(value["meta"])}
+        return {key: share_movies(item) for key, item in value.items()}
+    return value
+
+
+payload = share_movies(payload)
+for name, data in payload.items():
+    size = len(json.dumps(data, separators=(",", ":")).encode())
+    assert size <= 10_000, f"{name} input exceeds the 10 KB budget: {size} bytes"
+    print(f"{name} input: {size:,} bytes")
+payload["movies"] = movies
+
+print(f"{len(ext1)} timeline extremes, {len(ext2)} bubble extremes, "
+      f"{len(genres)} genres, {len(decades)} decades, "
+      f"{len(agree)} agreement movies")
+
+encoded = json.dumps(payload, separators=(",", ":"))
+Path("data.js").write_text(f"window.dashboardData={encoded};\n")
+
+html = Path("template.html").read_text()
+head, script = html.split("<script>\n", 1)
+javascript, tail = script.split("</script>", 1)
+Path("dashboard.js").write_text(javascript)
+Path("index.html").write_text(head + '<script src="dashboard.js" defer></script>' + tail)
+print(f"wrote index.html ({Path('index.html').stat().st_size:,} bytes), dashboard.js, and data.js")
