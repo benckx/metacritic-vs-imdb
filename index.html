@@ -8,7 +8,11 @@
     <script async src="https://www.googletagmanager.com/gtm.js?id=GTM-PKZHRWFX"></script>
     <script>
         window.dataLayer = window.dataLayer || [];
-        function gtag(){dataLayer.push(arguments);}
+
+        function gtag() {
+            dataLayer.push(arguments);
+        }
+
         gtag('js', new Date());
     </script>
     <script src="https://cdn.jsdelivr.net/npm/apexcharts@8.9.1" defer></script>
@@ -21,15 +25,17 @@
     <script src="js/consensus.js" defer></script>
     <script src="js/dashboard.js" defer></script>
     <meta name="description"
-          content="What kind of movies do you prefer? Are you more of a refined hipster or do you favor popular success? This dashboard explores movies where Metacritic critics and IMDb users disagree.">
+          content="What kind of movies do you prefer? Are you more of a refined hipster or do you favor popular success? Dashboard to explore movies where Metacritic critics and IMDb users disagree.">
+    <meta name="keywords"
+          content="Metacritic, IMDb, movie ratings, critic scores, user ratings, film comparison, movie rankings">
 </head>
 <body>
 <div class="wrap">
     <h1>Metacritic vs. IMDb</h1>
     <p class="sub">
         What kind of movies do you prefer? Are you more of a refined hipster or do you favor popular success? Where is
-        consensus and where is the disagreement? This dashboard explores movies where Metacritic critics and IMDb users
-        disagree.
+        the consensus and where is the disagreement? This dashboard explores movies where Metacritic critics and IMDb
+        users disagree.
     </p>
 
     <div data-export="imdb-over-metacritic">
