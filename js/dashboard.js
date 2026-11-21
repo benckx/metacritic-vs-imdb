@@ -33,9 +33,9 @@ const observer = new IntersectionObserver(entries => {
 document.addEventListener("DOMContentLoaded", () => {
     try {
         if (!window.dashboardData) throw new Error("Unable to load js/data.js");
-        buildTable("#table-pos", "Critics like it more", RED,
+        buildTable("#table-pos", "Metacritic > IMDb", RED,
             dashboardData.tables.pos.map(index => dashboardData.movies[index]));
-        buildTable("#table-neg", "Users like it more", BLUE,
+        buildTable("#table-neg", "IMDb > Metacritic", BLUE,
             dashboardData.tables.neg.map(index => dashboardData.movies[index]));
         for (const id of views.keys()) {
             observer.observe(document.getElementById(id));

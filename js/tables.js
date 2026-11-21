@@ -1,4 +1,3 @@
-// ---------- tables ----------
 function diffColor(d) {
     const a = Math.min(Math.abs(d) / 50, 1) * 0.75 + 0.1;
     return d >= 0 ? `rgba(224,92,85,${a})` : `rgba(78,141,232,${a})`;
@@ -56,6 +55,46 @@ function bindMovieHover(element, movie, withPoster = false) {
     });
 }
 
+const movieRowHTML = (m, rank) => `<tr class="movie-row" tabindex="0">
+    <td class="num muted">${rank}</td>
+    <td class="poster-cell"><a href="${imdb(m)}" target="_blank" rel="noopener noreferrer" aria-label="Open ${m.t} on IMDb">${poster(m) ? `<img src="${poster(m)}" loading="lazy" decoding="async" alt="">` : ""}</a></td>
+    <td class="movie-details">
+      <a class="movie-link" href="${imdb(m)}" target="_blank" rel="noopener noreferrer">${m.t} <span class="muted">(${m.y})</span></a>
+      <div class="diff-track">
+        <span class="diff-fill" style="width:${Math.min(Math.abs(m.d), 100)}%;background:${diffColor(m.d)}"></span>
+        <span class="diff-value">${sdiff(m.d)}</span>
+      </div>
+    </td>
+  </tr>`;
+
+function showMore(table, button, title, items, visible) {
+    const start = visible;
+    visible = Math.min(visible + 10, items.length);
+    const rowsHTML = items.slice(start, visible).map((m, i) => movieRowHTML(m, start + i + 1)).join("");
+    table.tBodies[0].insertAdjacentHTML("beforeend", rowsHTML);
+    const added = Array.from(table.querySelectorAll(".movie-row")).slice(start);
+    added.forEach((row, i) => {
+        const movie = items[start + i];
+        bindMovieHover(row, movie);
+        row.addEventListener("click", event => {
+            if (!event.target.closest("a, .diff-track")) {
+                window.open(imdb(movie), "_blank", "noopener,noreferrer");
+            }
+        });
+        row.addEventListener("keydown", event => {
+            if (event.key === "Enter" && event.target === row) {
+                window.open(imdb(movie), "_blank", "noopener,noreferrer");
+            }
+        });
+    });
+    table.caption.textContent = `${title} — top ${visible}`;
+    if (visible === items.length) {
+        if (document.activeElement === button && added.length) added[0].focus();
+        button.hidden = true;
+    }
+    return visible;
+}
+
 function buildTable(sel, title, color, items) {
     const table = document.querySelector(sel);
     table.innerHTML =
@@ -70,43 +109,8 @@ function buildTable(sel, title, color, items) {
     table.after(button);
     let visible = 0;
 
-    function showMore() {
-        const start = visible;
-        visible = Math.min(visible + 10, items.length);
-        const rows = items.slice(start, visible).map((m, i) => `<tr class="movie-row" tabindex="0">
-    <td class="num muted">${start + i + 1}</td>
-    <td class="poster-cell"><a href="${imdb(m)}" target="_blank" rel="noopener noreferrer" aria-label="Open ${m.t} on IMDb">${poster(m) ? `<img src="${poster(m)}" loading="lazy" decoding="async" alt="">` : ""}</a></td>
-    <td class="movie-details">
-      <a class="movie-link" href="${imdb(m)}" target="_blank" rel="noopener noreferrer">${m.t} <span class="muted">(${m.y})</span></a>
-      <div class="diff-track">
-        <span class="diff-fill" style="width:${Math.min(Math.abs(m.d), 100)}%;background:${diffColor(m.d)}"></span>
-        <span class="diff-value">${sdiff(m.d)}</span>
-      </div>
-    </td>
-  </tr>`).join("");
-        table.tBodies[0].insertAdjacentHTML("beforeend", rows);
-        const added = Array.from(table.querySelectorAll(".movie-row")).slice(start);
-        added.forEach((row, i) => {
-            const movie = items[start + i];
-            bindMovieHover(row, movie);
-            row.addEventListener("click", event => {
-                if (!event.target.closest("a, .diff-track")) {
-                    window.open(imdb(movie), "_blank", "noopener,noreferrer");
-                }
-            });
-            row.addEventListener("keydown", event => {
-                if (event.key === "Enter" && event.target === row) {
-                    window.open(imdb(movie), "_blank", "noopener,noreferrer");
-                }
-            });
-        });
-        table.caption.textContent = `${title} — top ${visible}`;
-        if (visible === items.length) {
-            if (document.activeElement === button && added.length) added[0].focus();
-            button.hidden = true;
-        }
-    }
-
-    button.addEventListener("click", showMore);
-    showMore();
+    button.addEventListener("click", () => {
+        visible = showMore(table, button, title, items, visible);
+    });
+    visible = showMore(table, button, title, items, visible);
 }

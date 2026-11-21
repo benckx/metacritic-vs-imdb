@@ -1,31 +1,9 @@
-# rating-discrepency
+# About
 
-Which movies do critics and IMDb users disagree about the most?
+What kind of movies do you prefer? Are you more of a refined hipster or do you favor popular success? This dashboard
+explores movies where Metacritic critics and IMDb users disagree.
 
-Compares Metacritic critic scores with IMDb user ratings, ranks the
-discrepancies, and renders an interactive visualization.
-
-Open `index.html` in a browser to see the result:
-
-- two tables with the 50 most extreme movies per side, shown 10 at a time
-- a timeline scatter (diff on x, release year on y) highlighting the most
-  extreme movie per side per year, with popular movies as context
-- a Metascore vs IMDb scatter where bubble size reflects IMDb vote count
-- the most extreme movies and average differences by genre and five-year period
-- a gallery of popular movies where scores differ by at most one point
-
-Keep `styles.css`, `js/`, and `posters/` beside `index.html`.
-`render.py` precomputes each visualization's selected movies, averages, and
-axis limits. Each view's input must stay below 10 KB; movie details are stored
-once in a shared lookup. Charts render only when they approach the viewport.
-ApexCharts requires an internet connection.
-ApexCharts is subject to its [license terms](https://apexcharts.com/license/).
-
-All scores are expressed in percent; the discrepancy is
-`Metascore − IMDb rating × 10`. Positive means critics like the movie more
-than users, negative the opposite.
-
-## Data sources
+# Data sources
 
 - **IMDb**: official [datasets](https://datasets.imdbws.com/)
   (`title.ratings.tsv`, `title.basics.tsv`), not committed — fetch them with
@@ -72,20 +50,20 @@ offline. Thresholds are flags on `compare.py`
 
 ## Files
 
-| File                                               | Role                                                                                      |
-|----------------------------------------------------|-------------------------------------------------------------------------------------------|
-| `full_refresh.sh`                                  | run the full refresh pipeline                                                             |
-| `fetch_imdb.sh`                                    | download IMDb datasets                                                                    |
-| `fetch_metacritic.py`                              | scrape Metacritic scores                                                                  |
-| `compare.py`                                       | join datasets, rank discrepancies, write the two CSVs                                     |
-| `metacritic.jsonl`                                 | fetched Metacritic movie data                                                             |
-| `critics_over_users.csv`, `users_over_critics.csv` | ranked movie data                                                                         |
-| `render.py`                                        | precompute compact chart inputs into `js/data.js`                                         |
-| `index.html`                                       | dashboard markup                                                                          |
-| `styles.css`                                       | dashboard styles                                                                          |
-| `js/common.js`, `js/tables.js`                     | shared helpers and movie rankings                                                         |
-| `js/timeline.js`, `js/plotted.js`, `js/category.js` | chart renderers                                                                          |
-| `js/consensus.js`                                  | consensus gallery                                                                         |
-| `js/dashboard.js`                                  | dashboard initialization and lazy loading                                                 |
-| `posters/`                                         | generated, resized poster thumbnails                                                      |
-| `js/data.js`                                       | generated, precomputed inputs and shared movie details; supports direct `file://` viewing |
+| File                                                | Role                                                                                      |
+|-----------------------------------------------------|-------------------------------------------------------------------------------------------|
+| `full_refresh.sh`                                   | run the full refresh pipeline                                                             |
+| `fetch_imdb.sh`                                     | download IMDb datasets                                                                    |
+| `fetch_metacritic.py`                               | scrape Metacritic scores                                                                  |
+| `compare.py`                                        | join datasets, rank discrepancies, write the two CSVs                                     |
+| `metacritic.jsonl`                                  | fetched Metacritic movie data                                                             |
+| `critics_over_users.csv`, `users_over_critics.csv`  | ranked movie data                                                                         |
+| `render.py`                                         | precompute compact chart inputs into `js/data.js`                                         |
+| `index.html`                                        | dashboard markup                                                                          |
+| `styles.css`                                        | dashboard styles                                                                          |
+| `js/common.js`, `js/tables.js`                      | shared helpers and movie rankings                                                         |
+| `js/timeline.js`, `js/plotted.js`, `js/category.js` | chart renderers                                                                           |
+| `js/consensus.js`                                   | consensus gallery                                                                         |
+| `js/dashboard.js`                                   | dashboard initialization and lazy loading                                                 |
+| `posters/`                                          | generated, resized poster thumbnails                                                      |
+| `js/data.js`                                        | generated, precomputed inputs and shared movie details; supports direct `file://` viewing |

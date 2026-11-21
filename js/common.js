@@ -5,13 +5,22 @@ const pct = v => Math.round(v) + "%";
 const sdiff = v => (v > 0 ? "+" : "") + Math.round(v) + "%";
 const pointMeta = point => point.movie === undefined ? point.meta : dashboardData.movies[point.movie];
 
-// ---------- shared tooltip ----------
-function tipHTML(m) {
-    const img = poster(m) ? `<img src="${poster(m)}" loading="lazy">` : "";
-    return `<div class="apex-tip">${img}<div>
-    <div class="tt">${m.t} (${m.y})</div>
-    <div class="ts">Metascore ${pct(m.mc)} &middot; IMDb ${pct(m.im)}<br>
-    diff ${sdiff(m.d)}<br>${m.v.toLocaleString()} votes</div></div></div>`;
+// ---------- Shared chart tooltip for plotted and timeline visualizations ----------
+/**
+ * @param {string} title
+ * @param {number} year
+ * @param {number} metacriticScore
+ * @param {number} imdbScore
+ * @param {number} difference
+ * @param {number} voteCount
+ * @param {string} [posterPath]
+ */
+function tipHTML(title, year, metacriticScore, imdbScore, difference, voteCount, posterPath) {
+    const posterHTML = posterPath ? `<img src="${posterPath}" loading="lazy">` : "";
+    return `<div class="apex-tip">${posterHTML}<div>
+    <div class="tt">${title} (${year})</div>
+    <div class="ts">Metascore ${pct(metacriticScore)} &middot; IMDb ${pct(imdbScore)}<br>
+    diff ${sdiff(difference)}<br>${voteCount.toLocaleString()} votes</div></div></div>`;
 }
 
 const customTip = ({seriesIndex, dataPointIndex, w}) => {
@@ -21,7 +30,7 @@ const customTip = ({seriesIndex, dataPointIndex, w}) => {
       <div class="ts">Signed difference: ${meta.average.toFixed(1)} percentage points<br>
       ${meta.count.toLocaleString()} movies · equal weight per movie</div></div></div>`;
     }
-    return tipHTML(meta);
+    return tipHTML(meta.t, meta.y, meta.mc, meta.im, meta.d, meta.v, meta.img);
 };
 
 const baseChart = {
