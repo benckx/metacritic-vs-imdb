@@ -2,17 +2,19 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <title>Critics vs IMDb users — rating discrepancy</title>
+    <title>Metacritic vs. IMDb users ratings</title>
     <link rel="stylesheet" href="styles.css">
     <script src="data.js" defer></script>
     <script src="dashboard.js" defer></script>
+    <meta name="description"
+          content="What kind of movies do you prefer? Are you more of a refined hipster or do you favor popular success? This dashboard explores movies where Metacritic critics and IMDb users disagree.">
 </head>
 <body>
 <div class="wrap">
-    <h1>Critics vs IMDb users</h1>
+    <h1>Metacritic vs. IMDb</h1>
     <p class="sub">
-        Where Metacritic critics and IMDb users disagree the most. All scores in percent; diff = Metascore − IMDb.
-        Movies since 1980.
+        What kind of movies do you prefer? Are you more of a refined hipster or do you favor popular success? This
+        dashboard explores movies where Metacritic critics and IMDb users disagree.
     </p>
 
     <div class="card ranking-card">
@@ -22,46 +24,35 @@
         <table id="table-neg"></table>
     </div>
 
-    <h2>Timeline of disagreement</h2>
-    <p class="sub">
-        Most extreme movie per side per year. Right: critics like it more; left: users like it more. Grey: 750 popular
-        movies. Hover for posters.
-    </p>
+    <h2>Through the Years</h2>
     <div class="card timeline-card">
         <div id="chart1"></div>
     </div>
 
-    <h2>Metascore vs IMDb score</h2>
+    <h2>Metacritic vs. IMDb plotted</h2>
     <p class="sub">
-        Bright: the 50 most extreme movies per side. Faded: 1,000 popular movies. Blue: users rate higher; red: critics
-        rate higher. Bubble area follows IMDb vote count, with a minimum size for visibility.
+        The closer a movie is to the diagonal, the more Metacritic and IMDb agree.
+        When IMDb users like it more, the point get more blue.
+        When Metacritic critics like it more, the point more red.
+        The most bright dots are the 50 most extreme datapoints on each side.
     </p>
     <div class="card bubble-card">
         <div id="chart2"></div>
     </div>
 
-    <h2>Most extreme by genre</h2>
-    <p class="sub">
-        One most extreme movie per side for each genre. Arrows: mean differences, longest first, colored by direction.
-        Means use signed differences, with equal weight per movie since 1980.
-    </p>
+    <h2>By Genre</h2>
     <div class="card category-card">
         <div id="chart-genre"></div>
     </div>
 
-    <h2>Most extreme by five-year period</h2>
-    <p class="sub">
-        One most extreme movie per side for each five-year period. Arrows: mean differences, colored by direction. Means
-        use signed differences, with equal weight per movie since 1980.
-    </p>
+    <h2>By Decade</h2>
     <div class="card category-card">
         <div id="chart-decade"></div>
     </div>
 
-    <h2>Where everyone agrees</h2>
+    <h2>Consensus</h2>
     <p class="sub">
-        The most popular movies where critics and users give (almost) the same score, ordered by their average score,
-        highest first.
+        Where the discrepancy is at a minimum.
     </p>
     <div id="agree-gallery"></div>
 </div>

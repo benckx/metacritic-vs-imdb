@@ -31,7 +31,7 @@ const baseChart = {
     zoom: {enabled: false},
     animations: {enabled: false},
     events: {
-        dataPointSelection: (_, __, {seriesIndex, dataPointIndex, w}) => {
+        _: (_, __, {seriesIndex, dataPointIndex, w}) => {
             const movie = pointMeta(w.config.series[seriesIndex].data[dataPointIndex]);
             if (movie.id) window.open(imdb(movie), "_blank", "noopener,noreferrer");
         },
