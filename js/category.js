@@ -1,5 +1,24 @@
-function drawMeanArrows(context) {
-    const svgNS = "http://www.w3.org/2000/svg";
+const categoryHoverMarkers = new WeakSet();
+
+/**
+ * @typedef {Object} CategoryMeanPoint
+ * @property {number} x Metacritic minus IMDb percentage at the arrow tip.
+ * @property {number} y Category row index at the arrow height.
+ * @property {{g: string, average: number, count: number}} meta Category mean summary.
+ */
+
+/**
+ * @typedef {Object} ChartContext
+ * @property {HTMLElement} el Chart container element.
+ * @property {Object} w ApexCharts context.
+ */
+
+/**
+ * @param {ChartContext} context
+ * @param {string} svgNS SVG namespace.
+ * @returns {SVGSVGElement}
+ */
+function initSvg(context, svgNS) {
     context.el.querySelector(".mean-arrows")?.remove();
     const svg = document.createElementNS(svgNS, "svg");
     svg.classList.add("mean-arrows");
@@ -23,40 +42,72 @@ function drawMeanArrows(context) {
         defs.appendChild(head);
     }
     svg.appendChild(defs);
+    return svg;
+}
+
+/**
+ * Draw one category mean arrow.
+ *
+ * @param {ChartContext} context
+ * @param {string} svgNS SVG namespace.
+ * @param {CategoryMeanPoint} point Category mean; x is the arrow-tip score difference,
+ * y is the category row index.
+ * @param {function(number): number} scoreDifferenceToPixelX Maps an x-axis score difference to a pixel.
+ * @param {function(number): number} categoryIndexToPixelY Maps a category row index to a pixel.
+ * @returns {SVGLineElement}
+ */
+function drawArrow(context, svgNS, point, scoreDifferenceToPixelX, categoryIndexToPixelY) {
+    const markerId = `${context.el.id}-mean-head`;
+    const line = document.createElementNS(svgNS, "line");
+    const direction = point.x > 0 ? "positive" : point.x < 0 ? "negative" : "zero";
+    const color = point.x > 0 ? RED : point.x < 0 ? BLUE : GREY;
+    const lineAttributes = {
+        x1: scoreDifferenceToPixelX(0),
+        x2: scoreDifferenceToPixelX(point.x),
+        y1: categoryIndexToPixelY(point.y),
+        y2: categoryIndexToPixelY(point.y),
+        stroke: color, "stroke-width": 2, "marker-end": `url(#${markerId}-${direction})`,
+    };
+    for (const [key, value] of Object.entries(lineAttributes)) {
+        line.setAttribute(key, value);
+    }
+    line.classList.add("mean-arrow");
+    line.addEventListener("pointerenter", event => {
+        showFloatingInfo(customTip({
+            seriesIndex: 2,
+            dataPointIndex: point.y,
+            w: context.w,
+        }), event.clientX, event.clientY);
+    });
+    line.addEventListener("pointermove", event => positionScores(event.clientX, event.clientY));
+    line.addEventListener("pointerleave", () => {
+        scoreTooltip.hidden = true;
+    });
+    return line;
+}
+
+/**
+ * Draw arrows from the zero point to each category mean.
+ *
+ * @param {ChartContext} context
+ * @returns {void}
+ */
+function drawMeanArrows(context) {
+    const svgNS = "http://www.w3.org/2000/svg";
+    const svg = initSvg(context, svgNS);
     const {translateX, translateY, gridWidth, gridHeight} = context.w.globals;
-    const xaxis = context.w.config.xaxis;
-    const yaxis = context.w.config.yaxis[0];
-    const x = value => translateX + gridWidth * (value - xaxis.min) / (xaxis.max - xaxis.min);
-    const y = value => translateY + gridHeight * (yaxis.max - value) / (yaxis.max - yaxis.min);
-    context.w.config.series[2].data.forEach(point => {
-        const line = document.createElementNS(svgNS, "line");
-        const direction = point.x > 0 ? "positive" : point.x < 0 ? "negative" : "zero";
-        const color = point.x > 0 ? RED : point.x < 0 ? BLUE : GREY;
-        const lineAttributes = {
-            x1: x(0), x2: x(point.x), y1: y(point.y), y2: y(point.y),
-            stroke: color, "stroke-width": 2, "marker-end": `url(#${markerId}-${direction})`,
-        };
-        for (const [key, value] of Object.entries(lineAttributes)) {
-            line.setAttribute(key, value);
-        }
-        line.classList.add("mean-arrow");
-        line.addEventListener("pointerenter", event => {
-            showFloatingInfo(customTip({
-                seriesIndex: 2,
-                dataPointIndex: point.y,
-                w: context.w,
-            }), event.clientX, event.clientY);
-        });
-        line.addEventListener("pointermove", event => positionScores(event.clientX, event.clientY));
-        line.addEventListener("pointerleave", () => {
-            scoreTooltip.hidden = true;
-        });
-        svg.appendChild(line);
+    const xAxis = context.w.config.xaxis;
+    const yAxis = context.w.config.yaxis[0];
+    const scoreDifferenceToPixelX = scoreDifference =>
+        translateX + gridWidth * (scoreDifference - xAxis.min) / (xAxis.max - xAxis.min);
+    const categoryIndexToPixelY = categoryIndex =>
+        translateY + gridHeight * (yAxis.max - categoryIndex) / (yAxis.max - yAxis.min);
+    const meanArrowPoints = context.w.config.series[2].data;
+    meanArrowPoints.forEach(point => {
+        svg.appendChild(drawArrow(context, svgNS, point, scoreDifferenceToPixelX, categoryIndexToPixelY));
     });
     context.el.appendChild(svg);
 }
-
-const categoryHoverMarkers = new WeakSet();
 
 function bindCategoryHover(context) {
     drawMeanArrows(context);
