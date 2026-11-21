@@ -222,11 +222,4 @@ print(f"{len(ext1)} timeline extremes, {len(ext2)} bubble extremes, "
 
 encoded = json.dumps(payload, separators=(",", ":"))
 Path("data.js").write_text(f"window.dashboardData={encoded};\n")
-
-html = Path("template.html").read_text()
-head, script = html.split("<script>\n", 1)
-javascript, tail = script.split("</script>", 1)
-Path("dashboard.js").write_text(javascript)
-head = head.replace("</head>", '<script src="dashboard.js" defer></script>\n</head>', 1)
-Path("index.html").write_text(head + tail.removeprefix("\n"))
-print(f"wrote index.html ({Path('index.html').stat().st_size:,} bytes), dashboard.js, and data.js")
+print(f"wrote data.js ({Path('data.js').stat().st_size:,} bytes)")

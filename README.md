@@ -59,7 +59,7 @@ The individual steps are:
 ./fetch_imdb.sh            # download and decompress the IMDb datasets
 python3 fetch_metacritic.py  # scrape Metacritic -> metacritic.jsonl
 python3 compare.py           # join + rank -> critics_over_users.csv, users_over_critics.csv
-python3 render.py          # generate index.html, dashboard.js, and data.js
+python3 render.py          # generate data.js and posters/
 ```
 
 `render.py` downloads each poster it needs once, shrinks it to fit 236×348 WebP
@@ -79,10 +79,9 @@ offline. Thresholds are flags on `compare.py`
 | `compare.py`                                       | join datasets, rank discrepancies, write the two CSVs                                     |
 | `metacritic.jsonl`                                 | fetched Metacritic movie data                                                             |
 | `critics_over_users.csv`, `users_over_critics.csv` | ranked movie data                                                                         |
-| `render.py`                                      | precompute compact chart inputs and build the page                                        |
-| `template.html`                                    | dashboard markup and ApexCharts rendering code                                            |
-| `index.html`                                       | generated dashboard shell                                                                 |
+| `render.py`                                        | precompute compact chart inputs into `data.js`                                            |
+| `index.html`                                       | dashboard markup                                                                          |
 | `styles.css`                                       | dashboard styles                                                                          |
-| `dashboard.js`                                     | generated renderer and lazy-loading code                                                  |
+| `dashboard.js`                                     | ApexCharts renderer and lazy-loading code                                                 |
 | `posters/`                                         | generated, resized poster thumbnails                                                      |
 | `data.js`                                          | generated, precomputed inputs and shared movie details; supports direct `file://` viewing |
