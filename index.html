@@ -1,48 +1,69 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<title>Critics vs IMDb users — rating discrepancy</title>
-<link rel="stylesheet" href="styles.css">
-<script src="data.js" defer></script>
-<script src="dashboard.js" defer></script>
+    <meta charset="utf-8">
+    <title>Critics vs IMDb users — rating discrepancy</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="data.js" defer></script>
+    <script src="dashboard.js" defer></script>
 </head>
 <body>
 <div class="wrap">
+    <h1>Critics vs IMDb users</h1>
+    <p class="sub">
+        Where Metacritic critics and IMDb users disagree the most. All scores in percent; diff = Metascore − IMDb.
+        Movies since 1980.
+    </p>
 
-<h1>Critics vs IMDb users</h1>
-<p class="sub">Where Metacritic critics and IMDb users disagree the most.
-All scores in percent; diff = Metascore − IMDb. Movies since 1980.</p>
+    <div class="card ranking-card">
+        <table id="table-pos"></table>
+    </div>
+    <div class="card ranking-card">
+        <table id="table-neg"></table>
+    </div>
 
-<div class="card ranking-card"><table id="table-pos"></table></div>
-<div class="card ranking-card"><table id="table-neg"></table></div>
+    <h2>Timeline of disagreement</h2>
+    <p class="sub">
+        Most extreme movie per side per year. Right: critics like it more; left: users like it more. Grey: 750 popular
+        movies. Hover for posters.
+    </p>
+    <div class="card timeline-card">
+        <div id="chart1"></div>
+    </div>
 
-<h2>Timeline of disagreement</h2>
-<p class="sub">Most extreme movie per side per year. Right: critics like it more; left: users like it more.
-Grey: 1,000 popular movies. Hover for posters.</p>
-<div class="card timeline-card"><div id="chart1"></div></div>
+    <h2>Metascore vs IMDb score</h2>
+    <p class="sub">
+        Bright: the 50 most extreme movies per side. Faded: 1,000 popular movies. Blue: users rate higher; red: critics
+        rate higher. Bubble area follows IMDb vote count, with a minimum size for visibility.
+    </p>
+    <div class="card bubble-card">
+        <div id="chart2"></div>
+    </div>
 
-<h2>Metascore vs IMDb score</h2>
-<p class="sub">Bright: the 50 most extreme movies per side. Faded: 1,000 popular movies.
-Blue: users rate higher; red: critics rate higher.
-Bubble area follows IMDb vote count, with a minimum size for visibility.</p>
-<div class="card bubble-card"><div id="chart2"></div></div>
+    <h2>Most extreme by genre</h2>
+    <p class="sub">
+        One most extreme movie per side for each genre. Arrows: mean differences, longest first, colored by direction.
+        Means use signed differences, with equal weight per movie since 1980.
+    </p>
+    <div class="card category-card">
+        <div id="chart-genre"></div>
+    </div>
 
-<h2>Most extreme by genre</h2>
-<p class="sub">One most extreme movie per side for each genre. Arrows: mean differences, longest first, colored by direction.
-Means use signed differences, with equal weight per movie since 1980.</p>
-<div class="card category-card"><div id="chart-genre"></div></div>
+    <h2>Most extreme by five-year period</h2>
+    <p class="sub">
+        One most extreme movie per side for each five-year period. Arrows: mean differences, colored by direction. Means
+        use signed differences, with equal weight per movie since 1980.
+    </p>
+    <div class="card category-card">
+        <div id="chart-decade"></div>
+    </div>
 
-<h2>Most extreme by five-year period</h2>
-<p class="sub">One most extreme movie per side for each five-year period. Arrows: mean differences, colored by direction.
-Means use signed differences, with equal weight per movie since 1980.</p>
-<div class="card category-card"><div id="chart-decade"></div></div>
-
-<h2>Where everyone agrees</h2>
-<p class="sub">The most popular movies where critics and users give (almost) the same score,
-ordered by their average score, highest first.</p>
-<div id="agree-gallery"></div>
-
+    <h2>Where everyone agrees</h2>
+    <p class="sub">
+        The most popular movies where critics and users give (almost) the same score, ordered by their average score,
+        highest first.
+    </p>
+    <div id="agree-gallery"></div>
 </div>
 <div id="score-tooltip" role="tooltip" hidden></div>
 </body>
