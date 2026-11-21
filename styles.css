@@ -110,17 +110,14 @@ table {
     width: 92px;
 }
 
-caption {
-    font-weight: 600;
-    font-size: 15px;
-    padding: 4px 0 12px;
-    text-align: left;
-}
-
 th, td {
     padding: 5px 10px;
     text-align: left;
     border-top: 1px solid var(--border);
+}
+
+tbody tr:first-child td {
+    border-top: 0;
 }
 
 th {

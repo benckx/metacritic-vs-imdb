@@ -3,6 +3,8 @@
 What kind of movies do you prefer? Are you more of a refined hipster or do you favor popular success? This dashboard
 explores movies where Metacritic critics and IMDb users disagree.
 
+![Metacritic vs. IMDb plotted](exports/metacritic-vs-imdb-plotted.png)
+
 # Data sources
 
 - **IMDb**: official [datasets](https://datasets.imdbws.com/)
@@ -48,6 +50,33 @@ offline. Thresholds are flags on `compare.py`
 (`--min-votes`, `--min-reviews`) and constants at the top of `render.py`
 (`MIN_YEAR`, `CONTEXT1`, `TOP2`, `CONTEXT2`).
 
+## Exporting visualizations
+
+Install the export tool's browser dependency once:
+
+```bash
+python3 -m pip install playwright
+python3 -m playwright install chromium
+```
+
+Then run:
+
+```bash
+python3 export_visualizations.py
+```
+
+This writes six PNGs to `exports/`, one per visualization, including its title
+and any description. Images use a 1200-pixel browser viewport and 3x resolution.
+The two rankings include the initial top 10 movies. About and the consensus gallery are not exported.
+Use `--output /path/to/images` to choose another destination. Existing images with
+the same names are overwritten. The script works from any directory and needs
+internet access to load the dashboard's existing ApexCharts CDN dependency.
+Charts, fonts, and poster images finish loading before capture; loading errors
+stop the export. Poster detail remains limited by the cached 236x348 thumbnails.
+
+Exportable sections in `index.html` use `data-export` attributes for stable
+filenames. Chart sections wrap their headings, descriptions, and cards together.
+
 ## Files
 
 | File                                                | Role                                                                                      |
@@ -59,6 +88,7 @@ offline. Thresholds are flags on `compare.py`
 | `metacritic.jsonl`                                  | fetched Metacritic movie data                                                             |
 | `critics_over_users.csv`, `users_over_critics.csv`  | ranked movie data                                                                         |
 | `render.py`                                         | precompute compact chart inputs into `js/data.js`                                         |
+| `export_visualizations.py`                          | export titled dashboard sections as high-resolution PNGs                                  |
 | `index.html`                                        | dashboard markup                                                                          |
 | `styles.css`                                        | dashboard styles                                                                          |
 | `js/common.js`, `js/tables.js`                      | shared helpers and movie rankings                                                         |

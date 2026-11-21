@@ -67,7 +67,7 @@ const movieRowHTML = (m, rank) => `<tr class="movie-row" tabindex="0">
     </td>
   </tr>`;
 
-function showMore(table, button, title, items, visible) {
+function showMore(table, heading, button, title, items, visible) {
     const start = visible;
     visible = Math.min(visible + 10, items.length);
     const rowsHTML = items.slice(start, visible).map((m, i) => movieRowHTML(m, start + i + 1)).join("");
@@ -87,7 +87,7 @@ function showMore(table, button, title, items, visible) {
             }
         });
     });
-    table.caption.textContent = `${title} — top ${visible}`;
+    heading.textContent = `${title} — top ${visible}`;
     if (visible === items.length) {
         if (document.activeElement === button && added.length) added[0].focus();
         button.hidden = true;
@@ -97,9 +97,10 @@ function showMore(table, button, title, items, visible) {
 
 function buildTable(sel, title, color, items) {
     const table = document.querySelector(sel);
+    const heading = table.closest("[data-export]").querySelector("h2");
+    heading.style.color = color;
     table.innerHTML =
-        `<caption style="color:${color}"></caption>
-     <colgroup><col class="rank-column"><col class="poster-column"><col></colgroup>
+        `<colgroup><col class="rank-column"><col class="poster-column"><col></colgroup>
      <tbody></tbody>`;
     const button = document.createElement("button");
     button.type = "button";
@@ -110,7 +111,7 @@ function buildTable(sel, title, color, items) {
     let visible = 0;
 
     button.addEventListener("click", () => {
-        visible = showMore(table, button, title, items, visible);
+        visible = showMore(table, heading, button, title, items, visible);
     });
-    visible = showMore(table, button, title, items, visible);
+    visible = showMore(table, heading, button, title, items, visible);
 }

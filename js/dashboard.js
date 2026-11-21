@@ -28,6 +28,7 @@ const observer = new IntersectionObserver(entries => {
         Promise
             .resolve()
             .then(() => widget.render(dashboardData[widget.key]))
+            .then(() => { entry.target.dataset.rendered = "true"; })
             .catch(error => showLoadError(entry.target, error));
     }
 }, {rootMargin: "150px"});

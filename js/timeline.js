@@ -1,4 +1,15 @@
 // ---------- year-by-year chart ----------
+function updateTimeline(context) {
+    const popularIndex = context.w.config.series.findIndex(series => series.name === "Popular movies");
+    const popular = context.el.querySelector(
+        `.apexcharts-plot-series > .apexcharts-series[rel="${popularIndex + 1}"]`
+    );
+    if (popular && popular !== popular.parentElement.firstElementChild) {
+        popular.parentElement.prepend(popular);
+    }
+    alignTimelineTitles(context);
+}
+
 function alignTimelineTitles(context) {
     let titles = context.el.querySelector(".timeline-titles");
     if (!titles) {
@@ -48,8 +59,8 @@ function yearByYearChart(data) {
             ...baseChart, type: "scatter", height: 780,
             events: {
                 ...baseChart.events,
-                mounted: alignTimelineTitles,
-                updated: alignTimelineTitles,
+                mounted: updateTimeline,
+                updated: updateTimeline,
             },
         },
         theme: darkTheme,
