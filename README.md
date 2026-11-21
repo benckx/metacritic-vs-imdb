@@ -15,7 +15,7 @@ Open `index.html` in a browser to see the result:
 - a gallery of popular movies where scores differ by at most one point
 
 Keep `styles.css`, `dashboard.js`, `data.js`, and `posters/` beside `index.html`.
-`make_viz.py` precomputes each visualization's selected movies, averages, and
+`render.py` precomputes each visualization's selected movies, averages, and
 axis limits. Each view's input must stay below 10 KB; movie details are stored
 once in a shared lookup. Charts render only when they approach the viewport.
 ApexCharts requires an internet connection.
@@ -59,14 +59,14 @@ The individual steps are:
 ./fetch_imdb.sh            # download and decompress the IMDb datasets
 python3 fetch_metacritic.py  # scrape Metacritic -> metacritic.jsonl
 python3 compare.py           # join + rank -> critics_over_users.csv, users_over_critics.csv
-python3 make_viz.py          # generate index.html, dashboard.js, and data.js
+python3 render.py          # generate index.html, dashboard.js, and data.js
 ```
 
-`make_viz.py` downloads each poster it needs once, shrinks it to fit 236×348 WebP
+`render.py` downloads each poster it needs once, shrinks it to fit 236×348 WebP
 in `posters/` (Metacritic originals are ~2000×3000, ~1 MB), and reuses cached
 files afterwards. It requires Pillow (`pip install pillow`). `compare.py` runs
 offline. Thresholds are flags on `compare.py`
-(`--min-votes`, `--min-reviews`) and constants at the top of `make_viz.py`
+(`--min-votes`, `--min-reviews`) and constants at the top of `render.py`
 (`MIN_YEAR`, `CONTEXT1`, `TOP2`, `CONTEXT2`).
 
 ## Files
@@ -79,7 +79,7 @@ offline. Thresholds are flags on `compare.py`
 | `compare.py`                                       | join datasets, rank discrepancies, write the two CSVs                                     |
 | `metacritic.jsonl`                                 | fetched Metacritic movie data                                                             |
 | `critics_over_users.csv`, `users_over_critics.csv` | ranked movie data                                                                         |
-| `make_viz.py`                                      | precompute compact chart inputs and build the page                                        |
+| `render.py`                                      | precompute compact chart inputs and build the page                                        |
 | `template.html`                                    | dashboard markup and ApexCharts rendering code                                            |
 | `index.html`                                       | generated dashboard shell                                                                 |
 | `styles.css`                                       | dashboard styles                                                                          |

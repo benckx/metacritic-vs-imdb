@@ -15,4 +15,4 @@ trap 'rm -f "$tmp_dir/metacritic.jsonl"; rmdir "$tmp_dir"' EXIT
 mv "$tmp_dir/metacritic.jsonl" "$root/metacritic.jsonl"
 
 python3 compare.py
-python3 make_viz.py
+python3 render.py
