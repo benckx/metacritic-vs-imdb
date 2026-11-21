@@ -45,8 +45,8 @@ function alignTimelineTitles(context) {
 function yearByYearChart(data) {
     const dAbs = data.limit;
     const series = [
-        ["Critics like it more", data.pos],
-        ["Users like it more", data.neg],
+        ["Metacritic > IMDb", data.pos],
+        ["IMDb > Metacritic", data.neg],
         ["Popular movies", data.ctx],
     ].map(([name, indexes]) => ({
         name, data: indexes.map(movie => {
