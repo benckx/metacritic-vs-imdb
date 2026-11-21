@@ -260,15 +260,15 @@ a:hover {
     margin-bottom: 6px;
 }
 
-#chart1 {
+#chart-year-by-year {
     position: relative;
 }
 
-#chart1 {
+#chart-year-by-year {
     min-height: 795px;
 }
 
-#chart2 {
+#chart-plotted {
     position: relative;
     aspect-ratio: 1;
     min-height: 0;
@@ -288,7 +288,7 @@ a:hover {
     min-height: 675px;
 }
 
-#agree-gallery {
+#consensus-gallery {
     min-height: 600px;
 }
 
@@ -357,7 +357,7 @@ a:hover {
     line-height: 1.5;
 }
 
-#agree-gallery {
+#consensus-gallery {
     display: flex;
     flex-wrap: wrap;
     gap: 14px;
@@ -366,7 +366,7 @@ a:hover {
     margin: 0 auto;
 }
 
-.agree-card {
+.consensus-card {
     width: 118px;
     background: var(--card);
     border: 1px solid var(--border);
@@ -375,14 +375,14 @@ a:hover {
     text-align: center;
 }
 
-.agree-card img {
+.consensus-card img {
     width: 118px;
     height: 174px;
     object-fit: cover;
     display: block;
 }
 
-.agree-card .ac-t {
+.consensus-card .consensus-title {
     font-size: 11px;
     font-weight: 600;
     padding: 6px 6px 2px;
@@ -391,7 +391,7 @@ a:hover {
     text-overflow: ellipsis;
 }
 
-.agree-card .ac-s {
+.consensus-card .consensus-scores {
     font-size: 11px;
     color: var(--green);
     padding-bottom: 7px;

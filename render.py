@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Build index.html: critic vs user rating discrepancy dashboard.
+"""Build compact shared data for the critic vs user rating discrepancy dashboard.
 
-Reads the ranking CSVs and writes the page, renderer, and compact shared data.
+Reads the ranking CSVs and writes the dashboard data and poster thumbnails.
 """
 import csv
 import json
@@ -19,7 +19,7 @@ MIN_YEAR = 1980          # everything older is excluded entirely
 CONTEXT1 = 1000          # grey dots on the timeline chart
 CONTEXT2 = 750           # grey bubbles on the Metascore vs IMDb chart
 TOP_TABLE = 50           # movies available per table
-TOP_AGREE = 35           # movies in the agreement gallery
+TOP_CONSENSUS = 35       # movies in the consensus gallery
 TOP2 = 50                # extremes per side on the bubble chart
 TOP_GENRE = 1            # extremes per side per genre
 TOP_PERIOD = 1           # extremes per side per five-year period
@@ -59,7 +59,7 @@ neg_all = sorted((r for r in rows if r["d"] < 0), key=lambda r: r["d"])
 tables = {"pos": [slim(r, False) for r in pos_all[:TOP_TABLE]],
           "neg": [slim(r, False) for r in neg_all[:TOP_TABLE]]}
 
-# Chart 1 (timeline): most extreme per side per year + popular context.
+# Year-by-year chart: most extreme per side per year + popular context.
 by_year = defaultdict(list)
 for r in rows:
     by_year[r["y"]].append(r)
@@ -73,13 +73,13 @@ for items in by_year.values():
         ext1.append(n)
 ids1 = {id(r) for r in ext1}
 ctx1 = [r for r in by_pop if id(r) not in ids1][:CONTEXT1]
-chart1 = {"ext": [slim(r) for r in ext1], "ctx": [slim(r) for r in ctx1]}
+year_by_year = {"ext": [slim(r) for r in ext1], "ctx": [slim(r) for r in ctx1]}
 
-# Chart 2 (Metascore vs IMDb bubbles): global extremes + popular context.
+# Plotted chart (Metascore vs IMDb bubbles): global extremes + popular context.
 ext2 = pos_all[:TOP2] + neg_all[:TOP2]
 ids2 = {id(r) for r in ext2}
 ctx2 = [r for r in by_pop if id(r) not in ids2][:CONTEXT2]
-chart2 = {"ext": [slim(r) for r in ext2], "ctx": [slim(r) for r in ctx2]}
+plotted = {"ext": [slim(r) for r in ext2], "ctx": [slim(r) for r in ctx2]}
 
 # By genre: most extreme per side for the most common genres.
 genre_counts = defaultdict(int)
@@ -116,9 +116,9 @@ for start in range(1980, latest_year + 1, 5):
                     "pos": [slim(r) for r in p[:TOP_PERIOD]],
                     "neg": [slim(r) for r in n[:TOP_PERIOD]]})
 
-# Agreement: most popular movies where critics and users match, sorted by score.
-agree = [slim(r, False) for r in by_pop if abs(r["d"]) <= 1][:TOP_AGREE]
-agree.sort(key=lambda r: r["mc"] + r["im"], reverse=True)
+# Consensus: most popular movies where critics and users match, sorted by score.
+consensus = [slim(r, False) for r in by_pop if abs(r["d"]) <= 1][:TOP_CONSENSUS]
+consensus.sort(key=lambda r: r["mc"] + r["im"], reverse=True)
 
 
 def category_input(groups, row_height):
@@ -145,18 +145,18 @@ def category_input(groups, row_height):
 
 payload = {
     "tables": tables,
-    "chart1": {
-        "pos": [m for m in chart1["ext"] if m["d"] > 0],
-        "neg": [m for m in chart1["ext"] if m["d"] < 0],
-        "ctx": chart1["ctx"],
-        "limit": math.ceil(max(abs(m["d"]) for m in chart1["ext"] + chart1["ctx"])) + 3,
+    "yearByYear": {
+        "pos": [m for m in year_by_year["ext"] if m["d"] > 0],
+        "neg": [m for m in year_by_year["ext"] if m["d"] < 0],
+        "ctx": year_by_year["ctx"],
+        "limit": math.ceil(max(abs(m["d"]) for m in year_by_year["ext"] + year_by_year["ctx"])) + 3,
     },
-    "chart2": {"pos": [m for m in chart2["ext"] if m["d"] > 0],
-               "neg": [m for m in chart2["ext"] if m["d"] < 0],
-               "ctx": chart2["ctx"]},
+    "plotted": {"pos": [m for m in plotted["ext"] if m["d"] > 0],
+                "neg": [m for m in plotted["ext"] if m["d"] < 0],
+                "ctx": plotted["ctx"]},
     "genres": category_input(genres, 46),
     "decades": category_input(periods, 60),
-    "agree": agree,
+    "consensus": consensus,
 }
 
 movies = []
@@ -218,8 +218,10 @@ payload["movies"] = movies
 
 print(f"{len(ext1)} timeline extremes, {len(ext2)} bubble extremes, "
       f"{len(genres)} genres, {len(periods)} five-year periods, "
-      f"{len(agree)} agreement movies")
+      f"{len(consensus)} consensus movies")
 
 encoded = json.dumps(payload, separators=(",", ":"))
-Path("data.js").write_text(f"window.dashboardData={encoded};\n")
-print(f"wrote data.js ({Path('data.js').stat().st_size:,} bytes)")
+data_path = Path("js/data.js")
+data_path.parent.mkdir(exist_ok=True)
+data_path.write_text(f"window.dashboardData={encoded};\n")
+print(f"wrote {data_path} ({data_path.stat().st_size:,} bytes)")

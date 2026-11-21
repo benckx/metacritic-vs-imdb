@@ -14,11 +14,12 @@ Open `index.html` in a browser to see the result:
 - the most extreme movies and average differences by genre and five-year period
 - a gallery of popular movies where scores differ by at most one point
 
-Keep `styles.css`, `dashboard.js`, `data.js`, and `posters/` beside `index.html`.
+Keep `styles.css`, `js/`, and `posters/` beside `index.html`.
 `render.py` precomputes each visualization's selected movies, averages, and
 axis limits. Each view's input must stay below 10 KB; movie details are stored
 once in a shared lookup. Charts render only when they approach the viewport.
 ApexCharts requires an internet connection.
+ApexCharts is subject to its [license terms](https://apexcharts.com/license/).
 
 All scores are expressed in percent; the discrepancy is
 `Metascore − IMDb rating × 10`. Positive means critics like the movie more
@@ -59,7 +60,7 @@ The individual steps are:
 ./fetch_imdb.sh            # download and decompress the IMDb datasets
 python3 fetch_metacritic.py  # scrape Metacritic -> metacritic.jsonl
 python3 compare.py           # join + rank -> critics_over_users.csv, users_over_critics.csv
-python3 render.py          # generate data.js and posters/
+python3 render.py          # generate js/data.js and posters/
 ```
 
 `render.py` downloads each poster it needs once, shrinks it to fit 236×348 WebP
@@ -79,9 +80,12 @@ offline. Thresholds are flags on `compare.py`
 | `compare.py`                                       | join datasets, rank discrepancies, write the two CSVs                                     |
 | `metacritic.jsonl`                                 | fetched Metacritic movie data                                                             |
 | `critics_over_users.csv`, `users_over_critics.csv` | ranked movie data                                                                         |
-| `render.py`                                        | precompute compact chart inputs into `data.js`                                            |
+| `render.py`                                        | precompute compact chart inputs into `js/data.js`                                         |
 | `index.html`                                       | dashboard markup                                                                          |
 | `styles.css`                                       | dashboard styles                                                                          |
-| `dashboard.js`                                     | ApexCharts renderer and lazy-loading code                                                 |
+| `js/common.js`, `js/tables.js`                     | shared helpers and movie rankings                                                         |
+| `js/timeline.js`, `js/plotted.js`, `js/category.js` | chart renderers                                                                          |
+| `js/consensus.js`                                  | consensus gallery                                                                         |
+| `js/dashboard.js`                                  | dashboard initialization and lazy loading                                                 |
 | `posters/`                                         | generated, resized poster thumbnails                                                      |
-| `data.js`                                          | generated, precomputed inputs and shared movie details; supports direct `file://` viewing |
+| `js/data.js`                                       | generated, precomputed inputs and shared movie details; supports direct `file://` viewing |

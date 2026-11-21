@@ -4,8 +4,15 @@
     <meta charset="utf-8">
     <title>Metacritic vs. IMDb users ratings</title>
     <link rel="stylesheet" href="styles.css">
-    <script src="data.js" defer></script>
-    <script src="dashboard.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts@8.9.1" defer></script>
+    <script src="js/data.js" defer></script>
+    <script src="js/common.js" defer></script>
+    <script src="js/tables.js" defer></script>
+    <script src="js/timeline.js" defer></script>
+    <script src="js/plotted.js" defer></script>
+    <script src="js/category.js" defer></script>
+    <script src="js/consensus.js" defer></script>
+    <script src="js/dashboard.js" defer></script>
     <meta name="description"
           content="What kind of movies do you prefer? Are you more of a refined hipster or do you favor popular success? This dashboard explores movies where Metacritic critics and IMDb users disagree.">
 </head>
@@ -26,7 +33,7 @@
 
     <h2>Through the Years</h2>
     <div class="card timeline-card">
-        <div id="chart1"></div>
+        <div id="chart-year-by-year"></div>
     </div>
 
     <h2>Metacritic vs. IMDb plotted</h2>
@@ -37,7 +44,7 @@
         The most bright dots are the 50 most extreme datapoints on each side.
     </p>
     <div class="card bubble-card">
-        <div id="chart2"></div>
+        <div id="chart-plotted"></div>
     </div>
 
     <h2>By Genre</h2>
@@ -54,7 +61,7 @@
     <p class="sub">
         Where the discrepancy is at a minimum.
     </p>
-    <div id="agree-gallery"></div>
+    <div id="consensus-gallery"></div>
 </div>
 <div id="score-tooltip" role="tooltip" hidden></div>
 </body>
