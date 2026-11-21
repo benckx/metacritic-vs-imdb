@@ -124,8 +124,8 @@ consensus.sort(key=lambda r: r["mc"] + r["im"], reverse=True)
 def category_input(groups, row_height):
     categories = groups
     series = [
-        {"name": "Critics like it more", "data": []},
-        {"name": "Users like it more", "data": []},
+        {"name": "Metacritic > IMDb", "data": []},
+        {"name": "IMDb > Metacritic", "data": []},
         {"name": "Category mean", "data": []},
     ]
     for index, category in enumerate(categories):

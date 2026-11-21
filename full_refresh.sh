@@ -6,6 +6,7 @@ root=$PWD
 command -v curl >/dev/null
 command -v gunzip >/dev/null
 python3 -c 'from PIL import Image'
+python3 -c 'from playwright.sync_api import sync_playwright'
 
 ./fetch_imdb.sh
 
@@ -16,3 +17,4 @@ mv "$tmp_dir/metacritic.jsonl" "$root/metacritic.jsonl"
 
 python3 compare.py
 python3 render.py
+python3 export_visualizations.py

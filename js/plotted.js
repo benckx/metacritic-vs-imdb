@@ -26,8 +26,8 @@ function plotted(data) {
     const differences = data.ctx.map(index => dashboardData.movies[index].d);
     const minDiff = Math.min(...differences), maxDiff = Math.max(...differences);
     const series = [
-        ["Metacritic > IMDb", data.pos],
         ["IMDb > Metacritic", data.neg],
+        ["Metacritic > IMDb", data.pos],
         ["Popular movies", data.ctx],
     ].map(([name, indexes], seriesIndex) => ({
         name, data: indexes.map(movie => {
@@ -48,7 +48,7 @@ function plotted(data) {
         },
         theme: darkTheme,
         series,
-        colors: [RED, BLUE, GREY],
+        colors: [BLUE, RED, GREY],
         fill: {type: "solid", opacity: [0.9, 0.9, 0.35]},
         plotOptions: {bubble: {zScaling: false}},
         dataLabels: {enabled: false},

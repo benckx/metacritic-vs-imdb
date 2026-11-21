@@ -28,8 +28,8 @@ To download fresh data and rebuild the rankings and dashboard, run:
 ./full_refresh.sh
 ```
 
-The script requires Bash, `curl`, `gunzip`, Python 3, and Pillow (`python3 -m pip install pillow`). It can be run from
-any directory and stops
+The script requires Bash, `curl`, `gunzip`, Python 3, Pillow (`python3 -m pip install pillow`), and Playwright with
+Chromium (see [Exporting visualizations](#exporting-visualizations)). It can be run from any directory and stops
 if a step fails. A failed Metacritic download leaves the previous
 `metacritic.jsonl` intact; earlier completed steps may still have updated files.
 Review the changed data and generated files before committing them.
@@ -41,6 +41,7 @@ The individual steps are:
 python3 fetch_metacritic.py  # scrape Metacritic -> metacritic.jsonl
 python3 compare.py           # join + rank -> critics_over_users.csv, users_over_critics.csv
 python3 render.py          # generate js/data.js and posters/
+python3 export_visualizations.py  # export dashboard visualizations to exports/
 ```
 
 `render.py` downloads each poster it needs once, shrinks it to fit 236×348 WebP
@@ -59,7 +60,7 @@ python3 -m pip install playwright
 python3 -m playwright install chromium
 ```
 
-Then run:
+The full refresh exports visualizations automatically. To export them separately, run:
 
 ```bash
 python3 export_visualizations.py

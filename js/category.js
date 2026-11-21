@@ -139,8 +139,8 @@ function categoryChart(sel, data) {
             events: {...baseChart.events, mounted: bindCategoryHover, updated: bindCategoryHover}
         },
         theme: darkTheme,
-        series: data.series,
-        colors: [RED, BLUE, GREY],
+        series: [data.series[1], data.series[0], data.series[2]],
+        colors: [BLUE, RED, GREY],
         markers: {size: [6, 6, 0], strokeWidth: 0, hover: {sizeOffset: 0}},
         xaxis: {
             min: -lim, max: lim, tickAmount: 10, crosshairs: {show: false},

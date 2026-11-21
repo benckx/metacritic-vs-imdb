@@ -45,8 +45,8 @@ function alignTimelineTitles(context) {
 function yearByYearChart(data) {
     const dAbs = data.limit;
     const series = [
-        ["Metacritic > IMDb", data.pos],
         ["IMDb > Metacritic", data.neg],
+        ["Metacritic > IMDb", data.pos],
         ["Popular movies", data.ctx],
     ].map(([name, indexes]) => ({
         name, data: indexes.map(movie => {
@@ -65,7 +65,7 @@ function yearByYearChart(data) {
         },
         theme: darkTheme,
         series,
-        colors: [RED, BLUE, GREY],
+        colors: [BLUE, RED, GREY],
         markers: {size: [6, 6, 3], strokeWidth: 0, hover: {sizeOffset: 2}},
         dataLabels: {enabled: false},
         xaxis: {

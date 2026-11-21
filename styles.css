@@ -177,6 +177,10 @@ a:hover {
     cursor: pointer;
 }
 
+.apexcharts-legend-series > .apexcharts-legend-marker {
+    margin-right: 5px;
+}
+
 .movie-details {
     padding: 14px 12px;
 }
