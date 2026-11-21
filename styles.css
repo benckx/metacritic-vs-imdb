@@ -155,6 +155,23 @@ a:hover {
     text-decoration: underline;
 }
 
+.about-links {
+    margin: 0 auto;
+    font-size: 15px;
+    text-align: center;
+    overflow-wrap: anywhere;
+}
+
+.about-links a {
+    display: block;
+    color: var(--blue);
+    font-weight: 700;
+}
+
+.about-links a + a {
+    margin-top: 6px;
+}
+
 .movie-link {
     display: block;
 }
