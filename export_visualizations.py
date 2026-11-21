@@ -24,11 +24,12 @@ def export_visualizations(output):
             page.add_style_tag(content="""
                 [data-export] {
                     background: var(--bg);
-                    padding: 24px;
+                    padding: 24px 24px 8px;
                     margin: 0 auto;
                 }
                 [data-export] h2 { margin-top: 0; }
                 [data-export] .card { margin-bottom: 0; }
+                [data-export] .export-url { margin: 24px 0 0; font-size: 11px; }
                 .view-more { display: none; }
             """)
             sections = page.locator("[data-export]")
@@ -62,6 +63,10 @@ def export_visualizations(output):
                             parseFloat(getComputedStyle(element).paddingRight);
                         element.style.maxWidth = `${card.offsetWidth + padding}px`;
                     }
+                    const url = document.createElement("p");
+                    url.className = "sub export-url";
+                    url.textContent = "https://benckx.github.io/metacritic-vs-imdb";
+                    element.appendChild(url);
                     await document.fonts.ready;
                     await Promise.all([...element.querySelectorAll("img")].map(image => {
                         image.loading = "eager";

@@ -13,12 +13,10 @@ explores movies where Metacritic critics and IMDb users disagree.
 - **Metacritic**: critic scores fetched from the site's
   backend API into `metacritic.jsonl`.
 
-Movies are joined on the IMDb id embedded in Metacritic image paths, with an
-unambiguous title + year fallback. When no eligible exact-year match exists,
-an unambiguous eligible match one year earlier or later may be used. The later
-year is displayed when sources disagree. Movies with fewer than 10,000 IMDb
-votes or fewer than 7 critic reviews are excluded from the rankings. The
-dashboard also excludes movies released before 1980 and movies without a year.
+Movies are joined on the IMDb id embedded in Metacritic image paths, with an unambiguous title + year fallback. When no
+eligible exact-year match exists, an unambiguous eligible match one year earlier or later may be used. The later year is
+displayed when sources disagree. Movies with fewer than 10,000 IMDb votes or fewer than 7 critic reviews are excluded
+from the rankings. The dashboard also excludes movies released before 1980 and movies without a year.
 
 ## Refreshing the data
 
@@ -66,17 +64,15 @@ The full refresh exports visualizations automatically. To export them separately
 python3 export_visualizations.py
 ```
 
-This writes six PNGs to `exports/`, one per visualization, including its title
-and any description. Images use a 1200-pixel browser viewport and 3x resolution.
-The two rankings include the initial top 10 movies. About and the consensus gallery are not exported.
-Use `--output /path/to/images` to choose another destination. Existing images with
-the same names are overwritten. The script works from any directory and needs
-internet access to load the dashboard's existing ApexCharts CDN dependency.
-Charts, fonts, and poster images finish loading before capture; loading errors
-stop the export. Poster detail remains limited by the cached 236x348 thumbnails.
+This writes six PNGs to `exports/`, one per visualization, including its title, any description, and the dashboard URL.
+Images use a 1200-pixel browser viewport and 3x resolution. The two rankings include the initial top 10 movies. About
+and the consensus gallery are not exported. Use `--output /path/to/images` to choose another destination. Existing
+images with the same names are overwritten. The script works from any directory and needs internet access to load the
+dashboard's existing ApexCharts CDN dependency. Charts, fonts, and poster images finish loading before capture; loading
+errors stop the export. Poster detail remains limited by the cached 236x348 thumbnails.
 
-Exportable sections in `index.html` use `data-export` attributes for stable
-filenames. Chart sections wrap their headings, descriptions, and cards together.
+Exportable sections in `index.html` use `data-export` attributes for stable filenames. Chart sections wrap their
+headings, descriptions, and cards together.
 
 ## Files
 
