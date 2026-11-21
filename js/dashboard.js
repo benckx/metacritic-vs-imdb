@@ -6,7 +6,7 @@ function showLoadError(element, error) {
     element.appendChild(message);
 }
 
-const views = new Map([
+const widgets = new Map([
     ["chart-year-by-year", {key: "yearByYear", render: yearByYearChart}],
     ["chart-plotted", {key: "plotted", render: plotted}],
     ["chart-genre", {
@@ -24,8 +24,10 @@ const observer = new IntersectionObserver(entries => {
     for (const entry of entries) {
         if (!entry.isIntersecting) continue;
         observer.unobserve(entry.target);
-        const view = views.get(entry.target.id);
-        Promise.resolve().then(() => view.render(dashboardData[view.key]))
+        const widget = widgets.get(entry.target.id);
+        Promise
+            .resolve()
+            .then(() => widget.render(dashboardData[widget.key]))
             .catch(error => showLoadError(entry.target, error));
     }
 }, {rootMargin: "150px"});
@@ -37,7 +39,7 @@ document.addEventListener("DOMContentLoaded", () => {
             dashboardData.tables.pos.map(index => dashboardData.movies[index]));
         buildTable("#table-neg", "IMDb > Metacritic", BLUE,
             dashboardData.tables.neg.map(index => dashboardData.movies[index]));
-        for (const id of views.keys()) {
+        for (const id of widgets.keys()) {
             observer.observe(document.getElementById(id));
         }
     } catch (error) {
