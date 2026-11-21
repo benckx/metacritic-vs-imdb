@@ -11,7 +11,8 @@ explores movies where Metacritic critics and IMDb users disagree.
   (`title.ratings.tsv`, `title.basics.tsv`), not committed — fetch them with
   `./fetch_imdb.sh`.
 - **Metacritic**: critic scores fetched from the site's
-  backend API into `metacritic.jsonl`.
+  backend API into `metacritic.jsonl`, not committed — fetch them with
+  `python3 fetch_metacritic.py`.
 
 Movies are joined on the IMDb id embedded in Metacritic image paths, with an unambiguous title + year fallback. When no
 eligible exact-year match exists, an unambiguous eligible match one year earlier or later may be used. The later year is
@@ -82,7 +83,7 @@ headings, descriptions, and cards together.
 | `fetch_imdb.sh`                                     | download IMDb datasets                                                                    |
 | `fetch_metacritic.py`                               | scrape Metacritic scores                                                                  |
 | `compare.py`                                        | join datasets, rank discrepancies, write the two CSVs                                     |
-| `metacritic.jsonl`                                  | fetched Metacritic movie data                                                             |
+| `metacritic.jsonl`                                  | fetched Metacritic movie data (not committed)                                             |
 | `critics_over_users.csv`, `users_over_critics.csv`  | ranked movie data                                                                         |
 | `render.py`                                         | precompute compact chart inputs into `js/data.js`                                         |
 | `export_visualizations.py`                          | export titled dashboard sections as high-resolution PNGs                                  |

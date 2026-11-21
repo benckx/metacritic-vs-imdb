@@ -1,4 +1,6 @@
 # IMDb datasets (fetch with ./fetch_imdb.sh)
 *.tsv
 *.tsv.gz
+# Metacritic dataset (fetch with python3 fetch_metacritic.py)
+/metacritic.jsonl
 .idea
