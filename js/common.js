@@ -33,6 +33,7 @@ const customTip = ({seriesIndex, dataPointIndex, w}) => {
     return tipHTML(meta.t, meta.y, meta.mc, meta.im, meta.d, meta.v, meta.img);
 };
 
+// noinspection JSUnusedGlobalSymbols
 const baseChart = {
     background: "transparent",
     fontFamily: "system-ui, sans-serif",
@@ -40,7 +41,7 @@ const baseChart = {
     zoom: {enabled: false},
     animations: {enabled: false},
     events: {
-        _: (_, __, {seriesIndex, dataPointIndex, w}) => {
+        dataPointSelection: (_, __, {seriesIndex, dataPointIndex, w}) => {
             const movie = pointMeta(w.config.series[seriesIndex].data[dataPointIndex]);
             if (movie.id) window.open(imdb(movie), "_blank", "noopener,noreferrer");
         },
