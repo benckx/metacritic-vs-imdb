@@ -35,6 +35,11 @@ if a step fails. A failed Metacritic download leaves the previous
 `metacritic.jsonl` intact; earlier completed steps may still have updated files.
 Review the changed data and generated files before committing them.
 
+Alternatively, run **Full refresh** from the repository's Actions tab. It commits and pushes the generated CSVs,
+dashboard data, posters, and visualization images to the selected branch. The workflow needs permission to write
+repository contents. A push made with `GITHUB_TOKEN` does not trigger a GitHub Pages build, so the published site
+updates only after a separate Pages build.
+
 The individual steps are:
 
 ```bash
