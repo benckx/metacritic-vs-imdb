@@ -360,13 +360,20 @@ a:hover {
 .apex-tip img {
     width: 62px;
     height: 92px;
+    flex-shrink: 0;
     object-fit: cover;
     border-radius: 4px;
+}
+
+.apex-tip > div {
+    min-width: 0;
 }
 
 .apex-tip .tt {
     font-weight: 600;
     margin-bottom: 4px;
+    white-space: normal;
+    overflow-wrap: anywhere;
 }
 
 .apex-tip .ts {
