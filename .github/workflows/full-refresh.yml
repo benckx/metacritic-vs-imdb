@@ -2,9 +2,8 @@ name: Full refresh
 
 on:
   workflow_dispatch:
-
-permissions:
-  contents: write
+  push:
+    branches: [main]
 
 concurrency:
   group: full-refresh-${{ github.ref }}
@@ -12,7 +11,12 @@ concurrency:
 
 jobs:
   refresh:
+    if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    outputs:
+      changed: ${{ steps.commit.outputs.changed }}
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-python@v6
@@ -25,6 +29,7 @@ jobs:
       - name: Refresh data and visualizations
         run: ./full_refresh.sh
       - name: Commit and push generated files
+        id: commit
         run: |
           git add -A -- critics_over_users.csv users_over_critics.csv js/data.js posters/ exports/
           if git diff --cached --quiet; then
@@ -35,3 +40,36 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git commit -m "Refresh movie data and visualizations"
           git push origin "HEAD:$GITHUB_REF"
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+
+  deploy:
+    needs: refresh
+    if: >-
+      ${{ always() && (github.event_name == 'push' ||
+      (needs.refresh.result == 'success' && needs.refresh.outputs.changed == 'true' &&
+      github.ref == 'refs/heads/main')) }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    concurrency:
+      group: pages
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: main
+      - name: Prepare site
+        run: |
+          mkdir "$RUNNER_TEMP/site"
+          git archive HEAD | tar -x -C "$RUNNER_TEMP/site"
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: ${{ runner.temp }}/site
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

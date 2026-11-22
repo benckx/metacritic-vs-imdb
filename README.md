@@ -37,8 +37,9 @@ Review the changed data and generated files before committing them.
 
 Alternatively, run **Full refresh** from the repository's Actions tab. It commits and pushes the generated CSVs,
 dashboard data, posters, and visualization images to the selected branch. The workflow needs permission to write
-repository contents. A push made with `GITHUB_TOKEN` does not trigger a GitHub Pages build, so the published site
-updates only after a separate Pages build.
+repository contents. A refresh with changes on `main` also publishes the site; other branches are not published.
+Normal pushes to `main` publish the site too. In repository settings, set Pages > Build and deployment > Source to
+**GitHub Actions**.
 
 The individual steps are:
 
