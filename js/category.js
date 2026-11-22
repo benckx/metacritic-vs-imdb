@@ -19,11 +19,11 @@ const categoryHoverMarkers = new WeakSet();
  * @returns {SVGSVGElement}
  */
 function initSvg(context, svgNS) {
-    context.el.querySelector(".mean-arrows")?.remove();
     const svg = document.createElementNS(svgNS, "svg");
     svg.classList.add("mean-arrows");
-    svg.setAttribute("width", context.el.clientWidth);
-    svg.setAttribute("height", context.el.clientHeight);
+    svg.setAttribute("width", context.el.clientWidth.toString());
+    svg.setAttribute("height", context.el.clientHeight.toString());
+
     const defs = document.createElementNS(svgNS, "defs");
     const markerId = `${context.el.id}-mean-head`;
     for (const [direction, color] of [["positive", RED], ["negative", BLUE], ["zero", GREY]]) {
@@ -79,7 +79,9 @@ function drawArrow(context, svgNS, point, scoreDifferenceToPixelX, categoryIndex
             w: context.w,
         }), event.clientX, event.clientY);
     });
-    line.addEventListener("pointermove", event => positionScores(event.clientX, event.clientY));
+    line.addEventListener("pointermove", event => {
+        positionScores(event.clientX, event.clientY);
+    });
     line.addEventListener("pointerleave", () => {
         scoreTooltip.hidden = true;
     });
@@ -93,6 +95,7 @@ function drawArrow(context, svgNS, point, scoreDifferenceToPixelX, categoryIndex
  * @returns {void}
  */
 function drawMeanArrows(context) {
+    context.el.querySelector(".mean-arrows")?.remove();
     const svgNS = "http://www.w3.org/2000/svg";
     const svg = initSvg(context, svgNS);
     const {translateX, translateY, gridWidth, gridHeight} = context.w.globals;
