@@ -88,7 +88,7 @@ headings, descriptions, and cards together.
 | `render.py`                                         | precompute compact chart inputs into `js/data.js`                                         |
 | `export_visualizations.py`                          | export titled dashboard sections as high-resolution PNGs                                  |
 | `index.html`                                        | dashboard markup                                                                          |
-| `styles.css`                                        | dashboard styles                                                                          |
+| `css/styles.css`                                    | dashboard styles                                                                          |
 | `js/common.js`, `js/tables.js`                      | shared helpers and movie rankings                                                         |
 | `js/timeline.js`, `js/plotted.js`, `js/category.js` | chart renderers                                                                           |
 | `js/consensus.js`                                   | consensus gallery                                                                         |

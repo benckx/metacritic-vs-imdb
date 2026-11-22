@@ -1,4 +1,3 @@
-// ---------- year-by-year chart ----------
 function updateTimeline(context) {
     const popularIndex = context.w.config.series.findIndex(series => series.name === "Popular movies");
     const popular = context.el.querySelector(
