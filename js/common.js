@@ -5,8 +5,10 @@ const pct = v => Math.round(v) + "%";
 const sdiff = v => (v > 0 ? "+" : "") + Math.round(v) + "%";
 const pointMeta = point => point.movie === undefined ? point.meta : dashboardData.movies[point.movie];
 
-// ---------- Shared chart tooltip for plotted and timeline visualizations ----------
+
 /**
+ * Shared chart tooltip for plotted and timeline visualizations
+ *
  * @param {string} title
  * @param {number} year
  * @param {number} metacriticScore
@@ -47,4 +49,5 @@ const baseChart = {
         },
     },
 };
+
 const darkTheme = {mode: "dark"};
