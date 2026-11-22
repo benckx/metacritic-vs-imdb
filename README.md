@@ -3,6 +3,8 @@
 What kind of movies do you prefer? Are you more of a refined hipster or do you favor popular success? This dashboard
 explores movies where Metacritic critics and IMDb users disagree.
 
+https://benckx.github.io/metacritic-vs-imdb/
+
 ![Metacritic vs. IMDb plotted](exports/metacritic-vs-imdb-plotted.png)
 
 # Data sources
