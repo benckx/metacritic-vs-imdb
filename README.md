@@ -38,7 +38,7 @@ Review the changed data and generated files before committing them.
 Alternatively, run **Full refresh** from the repository's Actions tab. It commits and pushes the generated CSVs,
 dashboard data, posters, and visualization images to the selected branch. The workflow needs permission to write
 repository contents. A refresh with changes on `main` also publishes the site; other branches are not published.
-It also runs on `main` at 03:17 UTC on the first day of January, April, July, and October. GitHub may disable
+It also runs on `main` at 06:00 UTC on the first day of January, April, July, and October. GitHub may disable
 scheduled workflows after 60 days without repository activity.
 Normal pushes to `main` publish the site too. In repository settings, set Pages > Build and deployment > Source to
 **GitHub Actions**.
