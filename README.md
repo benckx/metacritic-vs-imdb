@@ -36,10 +36,10 @@ Review the changed data and generated files before committing them.
 The individual steps are:
 
 ```bash
-./fetch_imdb.sh            # download and decompress the IMDb datasets
-python3 fetch_metacritic.py  # scrape Metacritic -> metacritic.jsonl
-python3 compare.py           # join + rank -> critics_over_users.csv, users_over_critics.csv
-python3 render.py          # generate js/data.js and posters/
+./fetch_imdb.sh                   # download and decompress the IMDb datasets
+python3 fetch_metacritic.py       # scrape Metacritic -> metacritic.jsonl
+python3 compare.py                # join + rank -> critics_over_users.csv, users_over_critics.csv
+python3 render.py                 # generate js/data.js and posters/
 python3 export_visualizations.py  # export dashboard visualizations to exports/
 ```
 

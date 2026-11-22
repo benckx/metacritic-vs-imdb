@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build compact shared data for the critic vs user rating discrepancy dashboard.
+"""Build compact shared data for the Metacritic vs IMDb rating discrepancy dashboard.
 
 Reads the ranking CSVs and writes the dashboard data and poster thumbnails.
 """
